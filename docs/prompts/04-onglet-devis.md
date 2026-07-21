@@ -2,6 +2,6 @@
 
 Lire intégralement `AGENT.md`. Travailler uniquement dans la racine actuelle `lmdbpropalpv/`, sans créer `lmdbpropalpv/lmdbpropalpv/` et sans modifier Dolibarr, JPSUN, PowerPlantPV ou un autre module. Préserver les modifications existantes. Cibler Dolibarr v20+, PHP 8.0+, MySQL/MariaDB, Multicompany, FR/EN et PHPStan. Utiliser les mécanismes natifs Dolibarr et exécuter les tests ciblés avant le compte rendu au format imposé par `AGENT.md`.
 
-Réaliser l’onglet « Étude financière PV » avec entête de devis natif, puissance-crête PowerPlantPV en lecture seule, formulaire sécurisé, sélecteurs natifs, datepicker, validation, état de complétude, indicateurs, graphique et tableau annuel. Verrouiller l’édition hors brouillon.
+Réaliser l’onglet « Étude financière PV » avec la bannière complète de la fiche Proposition commerciale (référence client, tiers, autres propositions et projet), puissance-crête PowerPlantPV en lecture seule, deux taux de dégradation proposés par un résolveur pondéré `quantité × pmax`, formulaire sécurisé, sélecteurs natifs, datepicker, validation, état de complétude affiché dans une ligne `Statut` d’un tableau `fichehalfright` avec badge Dolibarr et libellé visible, indicateurs, graphique et tableau annuel. Le graphique affiche la ligne zéro et la verticale du temps de retour interpolé. Verrouiller l’édition hors brouillon.
 
-Le rechargement de barème doit rester une action POST explicite et ne jamais être déclenché par un simple affichage.
+Le rechargement de barème et celui des caractéristiques panneaux doivent rester des actions POST explicites et ne jamais être déclenchés par un simple affichage. Les montants affichés suivent `price2num(..., 'MT')` et `price()` ; les prix unitaires suivent `price2num(..., 'MU')`.

@@ -25,7 +25,9 @@ class LmdbPropalPVFinancialCalculator
 			$exponent = $yearNumber - 1;
 			$year = new LmdbPropalPVFinancialYear();
 			$year->year = $yearNumber;
-			$year->productionKwh = $input->annualProductionKwh * pow(1.0 - $input->panelDegradationRate, $exponent);
+			$year->productionKwh = $input->annualProductionKwh
+				* (1.0 - $input->firstYearPanelDegradationRate)
+				* pow(1.0 - $input->annualPanelDegradationRate, $exponent);
 			$year->retailPricePerKwh = $input->retailPricePerKwh * pow(1.0 + $input->electricityGrowthRate, $exponent);
 			$year->surplusSale = $year->productionKwh * (1.0 - $input->selfConsumptionRate) * $input->feedInPricePerKwh;
 			$year->electricitySavings = $year->productionKwh * $input->selfConsumptionRate * $year->retailPricePerKwh;
@@ -67,8 +69,9 @@ class LmdbPropalPVFinancialCalculator
 		if ($input->selfConsumptionRate < 0.0 || $input->selfConsumptionRate > 1.0) {
 			throw new InvalidArgumentException('Self-consumption rate must be between zero and one.');
 		}
-		if ($input->panelDegradationRate < 0.0 || $input->panelDegradationRate >= 1.0) {
-			throw new InvalidArgumentException('Panel degradation rate must be between zero and one, excluding one.');
+		if ($input->firstYearPanelDegradationRate < 0.0 || $input->firstYearPanelDegradationRate >= 1.0
+			|| $input->annualPanelDegradationRate < 0.0 || $input->annualPanelDegradationRate >= 1.0) {
+			throw new InvalidArgumentException('Panel degradation rates must be between zero and one, excluding one.');
 		}
 		if ($input->electricityGrowthRate <= -1.0 || $input->retailPricePerKwh <= 0.0 || $input->feedInPricePerKwh < 0.0 || $input->premiumPerKwp < 0.0) {
 			throw new InvalidArgumentException('Growth and tariff values are outside the supported domain.');

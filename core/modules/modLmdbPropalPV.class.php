@@ -45,6 +45,7 @@ class modLmdbPropalPV extends DolibarrModules
 
 		$this->const = array(
 			array('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'chaine', '68', 'Default self-consumption percentage', 0, 'current', 0),
+			array('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'chaine', '0.45', 'Default first-year panel degradation percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', 'chaine', '0.45', 'Default annual panel degradation percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'chaine', '3', 'Default electricity annual growth percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'chaine', 'base', 'Default retail tariff mode', 0, 'current', 0),
@@ -95,6 +96,9 @@ class modLmdbPropalPV extends DolibarrModules
 			return -1;
 		}
 		if ($this->createProposalExtraFields() < 0) {
+			return -1;
+		}
+		if ($this->backfillFirstYearDegradation() < 0) {
 			return -1;
 		}
 
@@ -163,6 +167,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$fields = array(
 			array('lmdbpropalpv_annual_production_kwh', 'LmdbPropalPVAnnualProduction', 'double', '24,8', ''),
 			array('lmdbpropalpv_self_consumption_pct', 'LmdbPropalPVSelfConsumption', 'double', '8,4', ''),
+			array('lmdbpropalpv_first_year_degradation_pct', 'LmdbPropalPVFirstYearDegradation', 'double', '8,4', ''),
 			array('lmdbpropalpv_panel_degradation_pct', 'LmdbPropalPVPanelDegradation', 'double', '8,4', ''),
 			array('lmdbpropalpv_electricity_growth_pct', 'LmdbPropalPVElectricityGrowth', 'double', '8,4', ''),
 			array('lmdbpropalpv_tariff_reference_date', 'LmdbPropalPVTariffReferenceDate', 'date', '', ''),
@@ -180,6 +185,29 @@ class modLmdbPropalPV extends DolibarrModules
 				$this->error = $extrafields->error;
 				return -1;
 			}
+		}
+
+		return 1;
+	}
+
+	/** Initialize the new snapshot only on proposals that already contain a saved study. @return int */
+	private function backfillFirstYearDegradation()
+	{
+		global $conf;
+
+		$default = (float) getDolGlobalString('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', '0.45');
+		if ($default < 0.0 || $default >= 100.0) {
+			$default = 0.45;
+		}
+		$sql = 'UPDATE '.MAIN_DB_PREFIX.'propal_extrafields as pe';
+		$sql .= ' INNER JOIN '.MAIN_DB_PREFIX.'propal as p ON p.rowid = pe.fk_object';
+		$sql .= ' SET pe.lmdbpropalpv_first_year_degradation_pct = '.$this->db->escape((string) $default);
+		$sql .= ' WHERE p.entity = '.((int) $conf->entity);
+		$sql .= ' AND pe.lmdbpropalpv_first_year_degradation_pct IS NULL';
+		$sql .= ' AND (pe.lmdbpropalpv_annual_production_kwh IS NOT NULL OR pe.lmdbpropalpv_panel_degradation_pct IS NOT NULL)';
+		if (!$this->db->query($sql)) {
+			$this->error = $this->db->lasterror();
+			return -1;
 		}
 
 		return 1;

@@ -16,8 +16,10 @@ Version `1.0.0` — identifiant Dolibarr `450010` — famille « Les Métiers du
 ## Fonctionnalités V1
 
 - puissance-crête lue depuis PowerPlantPV ;
+- dégradations de première année et des années suivantes proposées depuis les modules PowerPlantPV, pondérées par puissance puis figées dans le devis ;
 - hypothèses propres à chaque devis stockées en extrafields ;
 - projection pure sur 20 ans, sans persistance des lignes calculées ;
+- graphiques avec graduations et repères du point d’amortissement ;
 - barèmes officiels S21 et TRVE embarqués depuis 2021, sans accès Internet à l’exécution ;
 - deux modèles PDF natifs, avec ou sans photos produits ;
 - réglages et barèmes isolés par entité ;
@@ -35,7 +37,9 @@ Pour chaque entité, la première activation ajoute et active « PV Signature il
 
 L’étude est accessible depuis l’onglet « Étude financière PV » d’une proposition commerciale. La puissance-crête est lue exclusivement depuis PowerPlantPV ; la production annuelle reste une saisie obligatoire. Les hypothèses et le barème chargé sont enregistrés comme un instantané du devis.
 
-Le bouton « Recharger le barème applicable » est la seule action qui remplace explicitement les valeurs tarifaires. Une mise à jour du module ou des barèmes ne modifie jamais un devis existant.
+Les boutons « Recharger le barème applicable » et « Recharger les caractéristiques panneaux » sont les seules actions qui remplacent explicitement leurs snapshots respectifs. Une mise à jour du module, des barèmes ou des fiches produits ne modifie jamais un devis existant.
+
+Les montants affichés dans l’onglet et les PDF respectent le réglage Dolibarr du nombre maximal de décimales des prix totaux. Les prix au kWh et par kWc conservent la précision configurée pour les prix unitaires.
 
 Les réglages internes permettent de définir les hypothèses par défaut, les couleurs PDF, l’avertissement financier et les barèmes propres à l’entité. Les modèles actifs et le modèle de devis par défaut restent administrés par la page native des propositions commerciales.
 

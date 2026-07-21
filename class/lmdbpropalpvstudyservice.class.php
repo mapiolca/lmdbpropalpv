@@ -3,6 +3,7 @@
 
 require_once __DIR__.'/lmdbpropalpvfinancialcalculator.class.php';
 require_once __DIR__.'/lmdbpropalpvtariffresolver.class.php';
+require_once __DIR__.'/lmdbpropalpvpaneldegradationresolver.class.php';
 require_once dirname(__DIR__).'/lib/lmdbpropalpv.lib.php';
 
 /** Build one proposal study from its immutable commercial and optional data. */
@@ -19,7 +20,7 @@ class LmdbPropalPVStudyService
 
 	/**
 	 * @param Propal $propal Loaded proposal
-	 * @return array{complete:bool,missing:list<string>,input:?LmdbPropalPVFinancialInput,result:?LmdbPropalPVFinancialResult,peak_power_kwp:float,investment_ttc:float,currency_code:string,reference_date:string,values:array<string,mixed>}
+	 * @return array{complete:bool,missing:list<string>,input:?LmdbPropalPVFinancialInput,result:?LmdbPropalPVFinancialResult,peak_power_kwp:float,investment_ttc:float,currency_code:string,reference_date:string,values:array<string,mixed>,degradation_warning_keys:list<string>,degradation_fallback_product_refs:list<string>,degradation_source:string}
 	 */
 	public function buildStudy($propal)
 	{
@@ -35,10 +36,23 @@ class LmdbPropalPVStudyService
 		$peakPowerKwp = $this->getPeakPowerKwp($propal);
 		$ownerEntity = !empty($propal->entity) ? (int) $propal->entity : (int) $GLOBALS['conf']->entity;
 		$proposalDate = !empty($propal->date) ? dol_print_date($propal->date, '%Y-%m-%d') : dol_print_date(dol_now(), '%Y-%m-%d');
+		$hasFirstYearDegradation = $this->optionIsSet($propal, 'lmdbpropalpv_first_year_degradation_pct');
+		$hasAnnualDegradation = $this->optionIsSet($propal, 'lmdbpropalpv_panel_degradation_pct');
+		$degradationResolution = array(
+			'first_year_degradation_pct' => (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', '0.45', $ownerEntity),
+			'annual_degradation_pct' => (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', '0.45', $ownerEntity),
+			'source' => 'snapshot',
+			'warning_keys' => array(),
+			'fallback_product_refs' => array(),
+		);
+		if (!$hasFirstYearDegradation || !$hasAnnualDegradation) {
+			$degradationResolution = $this->resolvePanelDegradation($propal);
+		}
 		$values = array(
 			'annual_production_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_annual_production_kwh', 0.0),
 			'self_consumption_pct' => $this->optionFloat($propal, 'lmdbpropalpv_self_consumption_pct', (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', '68', $ownerEntity)),
-			'panel_degradation_pct' => $this->optionFloat($propal, 'lmdbpropalpv_panel_degradation_pct', (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', '0.45', $ownerEntity)),
+			'first_year_degradation_pct' => $hasFirstYearDegradation ? $this->optionFloat($propal, 'lmdbpropalpv_first_year_degradation_pct', 0.0) : (float) $degradationResolution['first_year_degradation_pct'],
+			'panel_degradation_pct' => $hasAnnualDegradation ? $this->optionFloat($propal, 'lmdbpropalpv_panel_degradation_pct', 0.0) : (float) $degradationResolution['annual_degradation_pct'],
 			'electricity_growth_pct' => $this->optionFloat($propal, 'lmdbpropalpv_electricity_growth_pct', (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', '3', $ownerEntity)),
 			'reference_date' => $this->optionDate($propal, 'lmdbpropalpv_tariff_reference_date', $proposalDate),
 			'retail_mode' => $this->optionString($propal, 'lmdbpropalpv_retail_tariff_mode', lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'base', $ownerEntity)),
@@ -61,6 +75,9 @@ class LmdbPropalPVStudyService
 		}
 		if ((float) $values['self_consumption_pct'] < 0.0 || (float) $values['self_consumption_pct'] > 100.0) {
 			$missing[] = 'LmdbPropalPVInvalidSelfConsumption';
+		}
+		if ((float) $values['first_year_degradation_pct'] < 0.0 || (float) $values['first_year_degradation_pct'] >= 100.0) {
+			$missing[] = 'LmdbPropalPVInvalidFirstYearDegradation';
 		}
 		if ((float) $values['panel_degradation_pct'] < 0.0 || (float) $values['panel_degradation_pct'] >= 100.0) {
 			$missing[] = 'LmdbPropalPVInvalidDegradation';
@@ -96,6 +113,7 @@ class LmdbPropalPVStudyService
 				$peakPowerKwp,
 				(float) $values['annual_production_kwh'],
 				(float) $values['self_consumption_pct'] / 100.0,
+				(float) $values['first_year_degradation_pct'] / 100.0,
 				(float) $values['panel_degradation_pct'] / 100.0,
 				(float) $values['electricity_growth_pct'] / 100.0,
 				(float) $values['retail_price_per_kwh'],
@@ -115,7 +133,22 @@ class LmdbPropalPVStudyService
 			'currency_code' => $currencyCode,
 			'reference_date' => (string) $values['reference_date'],
 			'values' => $values,
+			'degradation_warning_keys' => array_values($degradationResolution['warning_keys']),
+			'degradation_fallback_product_refs' => array_values($degradationResolution['fallback_product_refs']),
+			'degradation_source' => (string) $degradationResolution['source'],
 		);
+	}
+
+	/**
+	 * @param Propal $propal Loaded proposal
+	 * @return array{first_year_degradation_pct:float,annual_degradation_pct:float,source:string,used_defaults:bool,total_power_wp:float,warning_keys:list<string>,fallback_product_refs:list<string>}
+	 */
+	public function resolvePanelDegradation($propal): array
+	{
+		$ownerEntity = !empty($propal->entity) ? (int) $propal->entity : (int) $GLOBALS['conf']->entity;
+		$defaultFirstYear = (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', '0.45', $ownerEntity);
+		$defaultAnnual = (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', '0.45', $ownerEntity);
+		return (new LmdbPropalPVPanelDegradationResolver($this->db))->resolveForProposal($propal, $defaultFirstYear, $defaultAnnual);
 	}
 
 	/** @return bool */
@@ -156,6 +189,13 @@ class LmdbPropalPVStudyService
 		}
 
 		return (float) $propal->array_options[$optionKey];
+	}
+
+	/** @return bool */
+	private function optionIsSet($propal, $key)
+	{
+		$optionKey = 'options_'.$key;
+		return isset($propal->array_options[$optionKey]) && $propal->array_options[$optionKey] !== '';
 	}
 
 	/** @return string */

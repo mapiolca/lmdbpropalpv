@@ -21,6 +21,7 @@ if ($action === 'save') {
 	}
 	$values = array(
 		'LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'alphanohtml'),
+		'LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'alphanohtml'),
 		'LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', 'alphanohtml'),
 		'LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'alphanohtml'),
 		'LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE' => GETPOST('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'alpha'),
@@ -31,14 +32,16 @@ if ($action === 'save') {
 	);
 	$error = 0;
 	$selfConsumption = (float) price2num($values['LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT']);
-	$degradation = (float) price2num($values['LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT']);
+	$firstYearDegradation = (float) price2num($values['LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT']);
+	$annualDegradation = (float) price2num($values['LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT']);
 	$growth = (float) price2num($values['LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT']);
 	$subscription = (float) price2num($values['LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA']);
 	$values['LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT'] = (string) price2num($values['LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT']);
+	$values['LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT'] = (string) price2num($values['LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT']);
 	$values['LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT'] = (string) price2num($values['LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT']);
 	$values['LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT'] = (string) price2num($values['LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT']);
 	$values['LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA'] = (string) price2num($values['LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA']);
-	if ($values['LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT'] === '' || $values['LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT'] === '' || $values['LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT'] === '' || $selfConsumption < 0.0 || $selfConsumption > 100.0 || $degradation < 0.0 || $degradation >= 100.0 || $growth <= -100.0) {
+	if ($values['LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT'] === '' || $values['LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT'] === '' || $values['LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT'] === '' || $values['LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT'] === '' || $selfConsumption < 0.0 || $selfConsumption > 100.0 || $firstYearDegradation < 0.0 || $firstYearDegradation >= 100.0 || $annualDegradation < 0.0 || $annualDegradation >= 100.0 || $growth <= -100.0) {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidDefaultPercentage'), null, 'errors');
 		$error++;
 	}
@@ -85,6 +88,7 @@ print '<input type="hidden" name="action" value="save">';
 print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVDefaultAssumptions').'</th></tr>';
 lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'LmdbPropalPVSelfConsumption', '68', ' %');
+lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'LmdbPropalPVFirstYearDegradation', '0.45', ' %');
 lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', 'LmdbPropalPVPanelDegradation', '0.45', ' %');
 lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'LmdbPropalPVElectricityGrowth', '3', ' %');
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVRetailTariffMode').'</td><td>';

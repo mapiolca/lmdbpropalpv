@@ -2,7 +2,7 @@
 
 ## 1. Objet
 
-Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque sur 20 ans et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite leurs interfaces publiques.
+Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque sur 20 ans et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
 
 Version : `1.0.0`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
 
@@ -30,7 +30,8 @@ Les hypothèses saisies sont :
 
 - production annuelle initiale en kWh, obligatoire ;
 - taux d’autoconsommation ;
-- dégradation annuelle des panneaux ;
+- dégradation des panneaux la première année ;
+- dégradation annuelle à partir de l’année 2 ;
 - augmentation annuelle du prix de l’électricité ;
 - date de référence tarifaire ;
 - profil Base, Heures pleines ou Manuel ;
@@ -39,19 +40,23 @@ Les hypothèses saisies sont :
 - tarif de vente du surplus ;
 - prime par kWc.
 
-Les valeurs initiales sont 68 %, 0,45 % et 3 %. Elles sont configurables par entité. Elles deviennent un instantané propre au devis dès le premier enregistrement.
+Les valeurs initiales sont 68 %, 0,45 % pour chacune des deux dégradations et 3 %. Elles sont configurables par entité. Sur un devis sans snapshot, les deux dégradations sont proposées depuis les produits MODULE de PowerPlantPV : moyenne pondérée par `quantité × pmax`, avec remplacement du seul taux absent ou invalide par le défaut de l’entité. Une valeur nulle est valide. En l’absence de module pondérable ou de schéma compatible, les deux défauts sont proposés avec un avertissement non bloquant.
+
+Le premier enregistrement copie les deux taux dans le devis. Les modifications ultérieures des fiches produits n’ont aucun effet jusqu’à l’action POST explicite « Recharger les caractéristiques panneaux », réservée aux devis brouillons modifiables.
 
 ### 3.2 États
 
 Le devis au brouillon est modifiable si l’utilisateur dispose des droits sur les propositions et du droit module `study/write`. Après validation, toutes les données sont consultatives.
 
-Le rechargement d’un barème est une action explicite. Une nouvelle release ou une modification administrative n’écrase jamais un devis existant.
+Le rechargement d’un barème ou des caractéristiques panneaux est une action explicite. Une nouvelle release ou une modification administrative n’écrase jamais un devis existant.
 
 ### 3.3 Complétude
 
 L’étude est complète lorsque la puissance-crête, le total TTC, la production, les pourcentages, le prix réseau, le barème de surplus et la date de référence sont valides. Les valeurs nulles de prime ou de tarif de vente restent autorisées lorsqu’elles sont prévues par le barème officiel.
 
 Une étude incomplète liste les informations manquantes. La génération d’un modèle PV reste possible, mais les pages financières sont omises et un avertissement Dolibarr non bloquant est affiché.
+
+La bannière reprend les informations natives de la fiche Proposition commerciale : référence client, tiers, lien vers les autres propositions et projet. Les états « Étude complète », « Étude incomplète » et « Lecture seule » sont affichés avec des badges Dolibarr natifs contenant leur libellé, dans un tableau `fichehalfright` aligné sur les lignes puissance-crête et investissement.
 
 ## 4. Calcul financier
 
@@ -60,7 +65,8 @@ Le moteur est pur : il ne lit ni la base, ni Dolibarr, ni le réseau et ne produ
 Pour l’année `a`, de 1 à 20 :
 
 ```text
-production = production_initiale × (1 - dégradation)^(a - 1)
+production année 1 = production_initiale × (1 - dégradation_première_année)
+production année a, a ≥ 2 = production_initiale × (1 - dégradation_première_année) × (1 - dégradation_annuelle)^(a - 1)
 prix_réseau = prix_initial × (1 + hausse)^(a - 1)
 vente_surplus = production × (1 - autoconsommation) × tarif_vente
 économie = production × autoconsommation × prix_réseau
@@ -72,16 +78,17 @@ rendement_annuel = gain_annuel / investissement
 
 Résultats : production totale, économies, ventes, prime, gains bruts, gain net, ROI à 20 ans, rendement annuel moyen, retour interpolé et coût de production simplifié.
 
-Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les normalisations et l’affichage monétaires utilisent les helpers Dolibarr.
+Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les prix unitaires sont normalisés avec `price2num(..., 'MU')`. Les montants sont normalisés avec `price2num(..., 'MT')` et affichés avec `price()` afin de suivre notamment le réglage « Nombre de décimales maximum pour les prix totaux ».
 
-Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 %, 3 %, 0,04 €/kWh, 0,2146 €/kWh, 80 €/kWc et 1 884,7575 € TTC. Le résultat attendu est un gain brut de 14 018,218888 €, un gain net de 12 133,461388 €, un retour de 2,931996 ans et un coût simplifié de 0,024829003 €/kWh.
+Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 % en première année, 0,45 % à partir de l’année 2, 3 %, 0,04 €/kWh, 0,2146 €/kWh, 80 €/kWc et 1 884,7575 € TTC. Le résultat attendu est un gain brut de 13 956,216903 €, un gain net de 12 071,459403 €, un retour de 2,944947 ans et un coût simplifié de 0,024941238 €/kWh.
 
 ## 5. Stockage
 
-Les hypothèses sont stockées dans 11 extrafields `propal`, invisibles sur la fiche principale :
+Les hypothèses sont stockées dans 12 extrafields `propal`, invisibles sur la fiche principale :
 
 - `lmdbpropalpv_annual_production_kwh` ;
 - `lmdbpropalpv_self_consumption_pct` ;
+- `lmdbpropalpv_first_year_degradation_pct` ;
 - `lmdbpropalpv_panel_degradation_pct` ;
 - `lmdbpropalpv_electricity_growth_pct` ;
 - `lmdbpropalpv_tariff_reference_date` ;
@@ -115,7 +122,7 @@ Les modèles natifs `propal` sont :
 - `lmdbpropalpv_withpictures` — PV Signature illustré ;
 - `lmdbpropalpv_withoutpictures` — PV Signature épuré.
 
-Les deux classes publiques sont minces et partagent un renderer. Le corps commercial s’appuie sur le modèle Cyan de la version Dolibarr installée afin de conserver TVA, remises, multicurrency, notes, conditions, hooks et photos produits. Le renderer ajoute une couverture moderne et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années.
+Les deux classes publiques sont minces et partagent un renderer. Le corps commercial s’appuie sur le modèle Cyan de la version Dolibarr installée afin de conserver TVA, remises, multicurrency, notes, conditions, hooks et photos produits. Le renderer ajoute une couverture moderne et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années. La courbe comporte des graduations d’années et de trésorerie, ainsi que les repères horizontal et vertical du point d’amortissement. Le même repère est affiché dans l’onglet du devis.
 
 La variante illustrée active uniquement la mécanique native de photos produits. Elle ne crée aucun stockage parallèle. La variante épurée désactive la colonne image.
 
@@ -134,7 +141,7 @@ Lors de la première activation d’une entité :
 3. `PROPALE_ADDON_PDF` reçoit `lmdbpropalpv_withpictures` ;
 4. `LMDBPROPALPV_INITIAL_PDF_SETUP_DONE` reçoit `1` après réussite.
 
-Les activations suivantes n’ajoutent, ne réactivent et ne sélectionnent aucun modèle. `remove()` restaure les constantes du module et ne supprime ni extrafields, ni données, ni modèles, ni réglages.
+Les activations suivantes n’ajoutent, ne réactivent et ne sélectionnent aucun modèle. `remove()` conserve les constantes du module et ne supprime ni extrafields, ni données, ni modèles, ni réglages.
 
 Le message d’activation explique ce comportement avant l’action administrateur.
 

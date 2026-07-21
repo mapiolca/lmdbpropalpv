@@ -9,7 +9,8 @@ class LmdbPropalPVFinancialInput
 	public float $peakPowerKwp;
 	public float $annualProductionKwh;
 	public float $selfConsumptionRate;
-	public float $panelDegradationRate;
+	public float $firstYearPanelDegradationRate;
+	public float $annualPanelDegradationRate;
 	public float $electricityGrowthRate;
 	public float $retailPricePerKwh;
 	public float $feedInPricePerKwh;
@@ -21,7 +22,8 @@ class LmdbPropalPVFinancialInput
 		float $peakPowerKwp,
 		float $annualProductionKwh,
 		float $selfConsumptionRate,
-		float $panelDegradationRate,
+		float $firstYearPanelDegradationRate,
+		float $annualPanelDegradationRate,
 		float $electricityGrowthRate,
 		float $retailPricePerKwh,
 		float $feedInPricePerKwh,
@@ -32,7 +34,8 @@ class LmdbPropalPVFinancialInput
 		$this->peakPowerKwp = $peakPowerKwp;
 		$this->annualProductionKwh = $annualProductionKwh;
 		$this->selfConsumptionRate = $selfConsumptionRate;
-		$this->panelDegradationRate = $panelDegradationRate;
+		$this->firstYearPanelDegradationRate = $firstYearPanelDegradationRate;
+		$this->annualPanelDegradationRate = $annualPanelDegradationRate;
 		$this->electricityGrowthRate = $electricityGrowthRate;
 		$this->retailPricePerKwh = $retailPricePerKwh;
 		$this->feedInPricePerKwh = $feedInPricePerKwh;

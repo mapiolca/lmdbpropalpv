@@ -1,6 +1,8 @@
 <?php
 /* Copyright (C) 2026 Pierre Ardoin <developpeur@lesmetiersdubatiment.fr> */
 
+require_once __DIR__.'/lmdbpropalpvpaneldegradationresolver.class.php';
+
 /** Compatibility registry for all conditional features. */
 class LmdbPropalPVCompatibility
 {
@@ -14,6 +16,7 @@ class LmdbPropalPVCompatibility
 		$powerplantVersion = '';
 		if (isModEnabled('powerplantpv')) {
 			dol_include_once('/powerplantpv/core/modules/modPowerPlantPV.class.php');
+			dol_include_once('/powerplantpv/lib/powerplantpv.lib.php');
 			if (class_exists('modPowerPlantPV') && is_object($db)) {
 				$descriptor = new modPowerPlantPV($db);
 				$powerplantVersion = (string) $descriptor->version;
@@ -21,6 +24,7 @@ class LmdbPropalPVCompatibility
 		}
 		$helperAvailable = function_exists('powerplantpvGetObjectPeakPowerKwc');
 		$powerplantCompatible = isModEnabled('powerplantpv') && $helperAvailable && $powerplantVersion !== '' && version_compare($powerplantVersion, '1.3.0', '>=');
+		$degradationSchemaAvailable = $powerplantCompatible && is_object($db) && LmdbPropalPVPanelDegradationResolver::isSchemaAvailable($db);
 
 		return array(
 			'financial_study' => array(
@@ -44,6 +48,17 @@ class LmdbPropalPVCompatibility
 				'compatibility_check' => "isModEnabled('powerplantpv') && PowerPlantPV >= 1.3.0 && function_exists('powerplantpvGetObjectPeakPowerKwc')",
 				'available' => $powerplantCompatible,
 				'reason' => 'LmdbPropalPVRequiresPowerPlantPV13',
+			),
+			'powerplant_product_degradation' => array(
+				'label' => 'LmdbPropalPVFeaturePanelDegradation',
+				'description' => 'LmdbPropalPVFeaturePanelDegradationDescription',
+				'min_dolibarr' => '20.0.0',
+				'core_available_from' => '20.0.0',
+				'module_available_from' => '20.0.0',
+				'min_php' => '8.0.0',
+				'compatibility_check' => "PowerPlantPV >= 1.3.0 && columns pmax, first_year_degradation, annual_degradation available",
+				'available' => $degradationSchemaAvailable,
+				'reason' => 'LmdbPropalPVPanelDegradationFallbackReason',
 			),
 			'online_signature' => array(
 				'label' => 'LmdbPropalPVFeatureOnlineSignature',
