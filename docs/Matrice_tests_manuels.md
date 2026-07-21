@@ -26,7 +26,7 @@
 | PDF | lignes et notes longues, plusieurs pages | pas de chevauchement avec le pied |
 | Graphiques | étude avec amortissement atteint | ligne horizontale jusqu’au point zéro et verticale jusqu’à l’axe des années dans l’onglet et le PDF |
 | Graphique PDF | valeurs négatives et positives sur 20 ans | graduations de trésorerie et d’années lisibles, courbe non tronquée |
-| Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | tous les montants de l’onglet et des PDF suivent le réglage ; les prix unitaires suivent la précision unitaire |
+| Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | tous les montants, durées et pourcentages de l’onglet et des PDF suivent le réglage ; les prix unitaires suivent la précision unitaire |
 | Signature | devis validé avec signature en ligne active | URL native et QR code |
 | Signature | signature désactivée | bloc Bon pour accord |
 | Multicompany | deux entités avec couleurs et devis distincts | réglages et documents isolés |

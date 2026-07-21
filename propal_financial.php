@@ -183,10 +183,10 @@ print '<input type="hidden" name="tariff_set_id" value="'.((int) $displayValues[
 print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVDefaultAssumptions').'</th></tr>';
 lmdbpropalpvInputRow('annual_production_kwh', 'LmdbPropalPVAnnualProduction', $displayValues['annual_production_kwh'], ' kWh', $editable, 'LmdbPropalPVAnnualProductionHelp');
-lmdbpropalpvInputRow('self_consumption_pct', 'LmdbPropalPVSelfConsumption', $displayValues['self_consumption_pct'], ' %', $editable);
-lmdbpropalpvInputRow('first_year_degradation_pct', 'LmdbPropalPVFirstYearDegradation', $displayValues['first_year_degradation_pct'], ' %', $editable, 'LmdbPropalPVFirstYearDegradationHelp');
-lmdbpropalpvInputRow('panel_degradation_pct', 'LmdbPropalPVPanelDegradation', $displayValues['panel_degradation_pct'], ' %', $editable, 'LmdbPropalPVPanelDegradationHelp');
-lmdbpropalpvInputRow('electricity_growth_pct', 'LmdbPropalPVElectricityGrowth', $displayValues['electricity_growth_pct'], ' %', $editable);
+lmdbpropalpvInputRow('self_consumption_pct', 'LmdbPropalPVSelfConsumption', $displayValues['self_consumption_pct'], ' %', $editable, '', 'MT');
+lmdbpropalpvInputRow('first_year_degradation_pct', 'LmdbPropalPVFirstYearDegradation', $displayValues['first_year_degradation_pct'], ' %', $editable, 'LmdbPropalPVFirstYearDegradationHelp', 'MT');
+lmdbpropalpvInputRow('panel_degradation_pct', 'LmdbPropalPVPanelDegradation', $displayValues['panel_degradation_pct'], ' %', $editable, 'LmdbPropalPVPanelDegradationHelp', 'MT');
+lmdbpropalpvInputRow('electricity_growth_pct', 'LmdbPropalPVElectricityGrowth', $displayValues['electricity_growth_pct'], ' %', $editable, '', 'MT');
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVTariffReferenceDate').'</td><td>';
 $dateTimestamp = dol_stringtotime((string) $displayValues['reference_date']);
 print $form->selectDate($dateTimestamp, 'tariff_reference_date', 0, 0, 0, '', 1, 0, $editable ? 0 : 1);
@@ -232,11 +232,11 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 		print '<tr><td class="titlefield">'.$langs->trans($label).'</td><td><strong>'.$value.'</strong></td></tr>';
 	}
 	print '</table></div><div class="fichehalfright"><table class="border centpercent">';
-	$payback = $result->paybackYears === null ? $langs->trans('LmdbPropalPVPaybackNotReached') : price($result->paybackYears).' '.$langs->trans('LmdbPropalPVYears');
+	$payback = $result->paybackYears === null ? $langs->trans('LmdbPropalPVPaybackNotReached') : price(price2num($result->paybackYears, 'MT')).' '.$langs->trans('LmdbPropalPVYears');
 	$metrics = array(
 		'LmdbPropalPVNetGain' => price(price2num($result->netGain, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']),
-		'LmdbPropalPVROI20' => price($result->roiRate * 100.0).' %',
-		'LmdbPropalPVAverageAnnualReturn' => price($result->averageAnnualReturnRate * 100.0).' %',
+		'LmdbPropalPVROI20' => price(price2num($result->roiRate * 100.0, 'MT')).' %',
+		'LmdbPropalPVAverageAnnualReturn' => price(price2num($result->averageAnnualReturnRate * 100.0, 'MT')).' %',
 		'LmdbPropalPVPayback' => $payback,
 		'LmdbPropalPVSimplifiedProductionCost' => price(price2num($result->simplifiedProductionCostPerKwh, 'MU')).' '.$study['currency_code'].'/kWh',
 	);
@@ -248,7 +248,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 	print '<div class="div-table-responsive"><table class="noborder centpercent">';
 	print '<tr class="liste_titre"><th>'.$langs->trans('LmdbPropalPVYear').'</th><th class="right">'.$langs->trans('LmdbPropalPVProduction').'</th><th class="right">'.$langs->trans('LmdbPropalPVNetworkPrice').'</th><th class="right">'.$langs->trans('LmdbPropalPVSurplusSale').'</th><th class="right">'.$langs->trans('LmdbPropalPVElectricitySavings').'</th><th class="right">'.$langs->trans('LmdbPropalPVPremium').'</th><th class="right">'.$langs->trans('LmdbPropalPVAnnualGain').'</th><th class="right">'.$langs->trans('LmdbPropalPVCumulativeCashflow').'</th><th class="right">'.$langs->trans('LmdbPropalPVAnnualReturn').'</th></tr>';
 	foreach ($result->years as $year) {
-		print '<tr class="oddeven"><td>'.((int) $year->year).'</td><td class="right">'.price($year->productionKwh).'</td><td class="right">'.price(price2num($year->retailPricePerKwh, 'MU')).'</td><td class="right">'.price(price2num($year->surplusSale, 'MT')).'</td><td class="right">'.price(price2num($year->electricitySavings, 'MT')).'</td><td class="right">'.price(price2num($year->premium, 'MT')).'</td><td class="right">'.price(price2num($year->annualGain, 'MT')).'</td><td class="right">'.price(price2num($year->cumulativeCashflow, 'MT')).'</td><td class="right">'.price($year->annualReturnRate * 100.0).' %</td></tr>';
+		print '<tr class="oddeven"><td>'.((int) $year->year).'</td><td class="right">'.price($year->productionKwh).'</td><td class="right">'.price(price2num($year->retailPricePerKwh, 'MU')).'</td><td class="right">'.price(price2num($year->surplusSale, 'MT')).'</td><td class="right">'.price(price2num($year->electricitySavings, 'MT')).'</td><td class="right">'.price(price2num($year->premium, 'MT')).'</td><td class="right">'.price(price2num($year->annualGain, 'MT')).'</td><td class="right">'.price(price2num($year->cumulativeCashflow, 'MT')).'</td><td class="right">'.price(price2num($year->annualReturnRate * 100.0, 'MT')).' %</td></tr>';
 	}
 	print '</table></div>';
 }
@@ -356,7 +356,7 @@ function lmdbpropalpvCashflowGraph(LmdbPropalPVFinancialResult $result, $currenc
 		$svg .= '<line x1="'.$left.'" y1="'.$zeroY.'" x2="'.$paybackX.'" y2="'.$zeroY.'" stroke="'.dol_escape_htmltag($accent).'" stroke-width="2.5" stroke-dasharray="7 5"/>';
 		$svg .= '<line x1="'.$paybackX.'" y1="'.$zeroY.'" x2="'.$paybackX.'" y2="'.($top + $plotHeight).'" stroke="'.dol_escape_htmltag($accent).'" stroke-width="2.5" stroke-dasharray="7 5"/>';
 		$svg .= '<circle cx="'.$paybackX.'" cy="'.$zeroY.'" r="5" fill="'.dol_escape_htmltag($accent).'"/>';
-		$svg .= '<text x="'.($paybackX + 6.0).'" y="'.($zeroY - 8.0).'" font-size="11" font-weight="bold" fill="'.dol_escape_htmltag($accent).'">'.dol_escape_htmltag($langs->trans('LmdbPropalPVPayback').' '.price($result->paybackYears).' '.$langs->trans('LmdbPropalPVYears')).'</text>';
+		$svg .= '<text x="'.($paybackX + 6.0).'" y="'.($zeroY - 8.0).'" font-size="11" font-weight="bold" fill="'.dol_escape_htmltag($accent).'">'.dol_escape_htmltag($langs->trans('LmdbPropalPVPayback').' '.price(price2num($result->paybackYears, 'MT')).' '.$langs->trans('LmdbPropalPVYears')).'</text>';
 	}
 	$svg .= '<polyline points="'.dol_escape_htmltag(implode(' ', $points)).'" fill="none" stroke="'.dol_escape_htmltag($primary).'" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>';
 	foreach ($points as $point) {

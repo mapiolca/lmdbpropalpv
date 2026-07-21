@@ -39,7 +39,7 @@ L’étude est accessible depuis l’onglet « Étude financière PV » d’une 
 
 Les boutons « Recharger le barème applicable » et « Recharger les caractéristiques panneaux » sont les seules actions qui remplacent explicitement leurs snapshots respectifs. Une mise à jour du module, des barèmes ou des fiches produits ne modifie jamais un devis existant.
 
-Les montants affichés dans l’onglet et les PDF respectent le réglage Dolibarr du nombre maximal de décimales des prix totaux. Les prix au kWh et par kWc conservent la précision configurée pour les prix unitaires.
+Les montants, durées et pourcentages affichés dans l’onglet et les PDF respectent le réglage Dolibarr du nombre maximal de décimales des prix totaux. Les prix au kWh et par kWc conservent la précision configurée pour les prix unitaires.
 
 Les réglages internes permettent de définir les hypothèses par défaut, les couleurs PDF, l’avertissement financier et les barèmes propres à l’entité. Les modèles actifs et le modèle de devis par défaut restent administrés par la page native des propositions commerciales.
 

@@ -376,7 +376,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		}
 		$this->drawCoverMetric($pdf, $this->marge_gauche + 6, 148, $outputlangs->transnoentities('LmdbPropalPVPeakPower'), price($study['peak_power_kwp']).' kWc', $primary);
 		if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResult) {
-			$payback = $study['result']->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReached') : price($study['result']->paybackYears).' '.$outputlangs->transnoentities('LmdbPropalPVYears');
+				$payback = $study['result']->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReached') : price(price2num($study['result']->paybackYears, 'MT'), 0, $outputlangs).' '.$outputlangs->transnoentities('LmdbPropalPVYears');
 			$this->drawCoverMetric($pdf, $this->marge_gauche + 68, 148, $outputlangs->transnoentities('LmdbPropalPVPayback'), $payback, $primary);
 			$this->drawCoverMetric($pdf, $this->marge_gauche + 130, 148, $outputlangs->transnoentities('LmdbPropalPVNetGain'), price(price2num($study['result']->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), $primary);
 		}
@@ -512,9 +512,9 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetXY($this->marge_gauche, 46);
 		$pdf->Cell(58, 7, price(price2num($result->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), 0, 0, 'L');
 		$pdf->SetXY(76, 46);
-		$pdf->Cell(58, 7, price($result->roiRate * 100.0).' %', 0, 0, 'L');
+			$pdf->Cell(58, 7, price(price2num($result->roiRate * 100.0, 'MT'), 0, $outputlangs).' %', 0, 0, 'L');
 		$pdf->SetXY(139, 46);
-		$pdf->Cell(58, 7, ($result->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReached') : price($result->paybackYears).' '.$outputlangs->transnoentities('LmdbPropalPVYears')), 0, 0, 'L');
+			$pdf->Cell(58, 7, ($result->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReached') : price(price2num($result->paybackYears, 'MT'), 0, $outputlangs).' '.$outputlangs->transnoentities('LmdbPropalPVYears')), 0, 0, 'L');
 
 		$this->drawCashflowChart($pdf, $result, $outputlangs, 12, 62, 185, 48, $primary, $accent);
 		$pdf->SetFont('', '', 5.8);
@@ -532,7 +532,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$y += 9;
 		foreach ($result->years as $year) {
 			$x = $this->marge_gauche;
-			$values = array($year->year, price($year->productionKwh), price(price2num($year->retailPricePerKwh, 'MU')), price(price2num($year->surplusSale, 'MT')), price(price2num($year->electricitySavings, 'MT')), price(price2num($year->premium, 'MT')), price(price2num($year->annualGain, 'MT')), price(price2num($year->cumulativeCashflow, 'MT')), price($year->annualReturnRate * 100.0).' %');
+				$values = array($year->year, price($year->productionKwh), price(price2num($year->retailPricePerKwh, 'MU')), price(price2num($year->surplusSale, 'MT')), price(price2num($year->electricitySavings, 'MT')), price(price2num($year->premium, 'MT')), price(price2num($year->annualGain, 'MT')), price(price2num($year->cumulativeCashflow, 'MT')), price(price2num($year->annualReturnRate * 100.0, 'MT'), 0, $outputlangs).' %');
 			foreach ($values as $index => $value) {
 				$pdf->SetXY($x, $y);
 				$pdf->Cell($widths[$index], 5.2, (string) $value, 1, 0, $index === 0 ? 'C' : 'R', false, '', 1);
@@ -542,7 +542,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		}
 		$pdf->SetFont('', '', 7);
 		$pdf->SetXY($this->marge_gauche, $y + 4);
-		$assumptions = $outputlangs->transnoentities('LmdbPropalPVSelfConsumption').' '.price((float) $study['values']['self_consumption_pct']).' % · '.$outputlangs->transnoentities('LmdbPropalPVFirstYearDegradation').' '.price((float) $study['values']['first_year_degradation_pct']).' % · '.$outputlangs->transnoentities('LmdbPropalPVPanelDegradation').' '.price((float) $study['values']['panel_degradation_pct']).' % · '.$outputlangs->transnoentities('LmdbPropalPVElectricityGrowth').' '.price((float) $study['values']['electricity_growth_pct']).' %';
+			$assumptions = $outputlangs->transnoentities('LmdbPropalPVSelfConsumption').' '.price(price2num((float) $study['values']['self_consumption_pct'], 'MT'), 0, $outputlangs).' % · '.$outputlangs->transnoentities('LmdbPropalPVFirstYearDegradation').' '.price(price2num((float) $study['values']['first_year_degradation_pct'], 'MT'), 0, $outputlangs).' % · '.$outputlangs->transnoentities('LmdbPropalPVPanelDegradation').' '.price(price2num((float) $study['values']['panel_degradation_pct'], 'MT'), 0, $outputlangs).' % · '.$outputlangs->transnoentities('LmdbPropalPVElectricityGrowth').' '.price(price2num((float) $study['values']['electricity_growth_pct'], 'MT'), 0, $outputlangs).' %';
 		$pdf->MultiCell(185, 4, $assumptions, 0, 'L');
 		foreach ($study['degradation_warning_keys'] as $warningKey) {
 			$references = implode(', ', $study['degradation_fallback_product_refs']);

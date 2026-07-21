@@ -78,7 +78,7 @@ rendement_annuel = gain_annuel / investissement
 
 Résultats : production totale, économies, ventes, prime, gains bruts, gain net, ROI à 20 ans, rendement annuel moyen, retour interpolé et coût de production simplifié.
 
-Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les prix unitaires sont normalisés avec `price2num(..., 'MU')`. Les montants sont normalisés avec `price2num(..., 'MT')` et affichés avec `price()` afin de suivre notamment le réglage « Nombre de décimales maximum pour les prix totaux ».
+Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les prix unitaires sont normalisés avec `price2num(..., 'MU')`. Les montants, durées et pourcentages présentés sont normalisés avec `price2num(..., 'MT')` et affichés avec `price()` afin de suivre notamment le réglage « Nombre de décimales maximum pour les prix totaux ». Cette normalisation reste limitée à l’affichage et ne réduit pas la précision interne du moteur financier.
 
 Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 % en première année, 0,45 % à partir de l’année 2, 3 %, 0,04 €/kWh, 0,2146 €/kWh, 80 €/kWc et 1 884,7575 € TTC. Le résultat attendu est un gain brut de 13 956,216903 €, un gain net de 12 071,459403 €, un retour de 2,944947 ans et un coût simplifié de 0,024941238 €/kWh.
 

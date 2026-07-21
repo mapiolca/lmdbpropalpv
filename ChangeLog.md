@@ -5,7 +5,7 @@
 - Première version de l’étude financière photovoltaïque sur 20 ans.
 - Moteur pur sans arrondi intermédiaire, temps de retour interpolé, ROI, rendement moyen et coût simplifié.
 - Dégradations distinctes en première année et à partir de l’année 2, proposées depuis les modules PowerPlantPV par moyenne pondérée sur la puissance et enregistrées comme snapshots rechargeables.
-- Montants normalisés selon les décimales totales Dolibarr et graphiques enrichis des graduations et repères d’amortissement.
+- Montants, durées et pourcentages normalisés selon les décimales totales Dolibarr, avec graphiques enrichis des graduations et repères d’amortissement.
 - États complet, incomplet et consultatif affichés avec les badges natifs Dolibarr.
 - Historique officiel embarqué des tarifs S21 et TRVE depuis 2021, avec sources et empreintes SHA-256.
 - Onglet natif sur les propositions commerciales, snapshots tarifaires et rechargement explicite.
