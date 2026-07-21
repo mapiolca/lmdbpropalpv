@@ -36,6 +36,9 @@
 | PDF | lignes et notes longues, plusieurs pages | pas de chevauchement avec le pied |
 | PDF raccordement | générer les deux modèles avec contrôle conforme, alerte et vérification incomplète | même encadré jaune, valeurs et messages cohérents avec l’onglet |
 | Modèles PDF | ouvrir l’administration native en français puis en anglais | noms traduits « PV Signature illustré/épuré » et équivalents anglais, identifiants techniques inchangés |
+| Métadonnées PDF | mettre à jour une installation contenant les anciennes lignes avec `description` renseignée | libellés traduits visibles, `description` vidée, aucun modèle désactivé ou réactivé et modèle par défaut inchangé |
+| Corps commercial configurable | sélectionner successivement Cyan puis un autre modèle PDF actif dans chaque entité | le corps commercial provient du modèle choisi et les pages PV sont assemblées autour de celui-ci |
+| Corps commercial indisponible | désactiver après configuration le modèle commercial sélectionné puis générer | repli contrôlé sur Cyan, sans récursion ni erreur fatale |
 | Graphiques | étude avec amortissement atteint | ligne horizontale jusqu’au point zéro et verticale jusqu’à l’axe des années dans l’onglet et le PDF |
 | Graphique PDF | valeurs négatives et positives sur 20 ans | graduations de trésorerie et d’années lisibles, courbe non tronquée |
 | Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | toutes les données de la projection suivent la précision totale dans l’onglet et les PDF, sauf « Prix réseau » qui suit la précision unitaire |

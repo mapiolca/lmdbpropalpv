@@ -52,7 +52,9 @@ class modLmdbPropalPV extends DolibarrModules
 			array('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', 'chaine', '6', 'Default retail subscribed power', 0, 'current', 0),
 			array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'chaine', '#16324F', 'Primary PDF color', 0, 'current', 0),
 			array('LMDBPROPALPV_PDF_ACCENT_COLOR', 'chaine', '#F2B705', 'Accent PDF color', 0, 'current', 0),
+			array('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'chaine', 'cyan', 'Proposal PDF model used as commercial body', 0, 'current', 0),
 			array('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'chaine', '', 'Optional financial disclaimer', 0, 'current', 0),
+			array('LMDBPROPALPV_DOCUMENT_MODEL_METADATA_FIXED', 'chaine', '0', 'Document model metadata migration marker', 0, 'current', 0),
 		);
 
 		$r = 0;
@@ -86,7 +88,7 @@ class modLmdbPropalPV extends DolibarrModules
 	/** @param string $options Activation options @return int */
 	public function init($options = '')
 	{
-		global $conf;
+		global $conf, $langs;
 
 		if ($this->checkPowerPlantDependency() < 0) {
 			return -1;
@@ -112,6 +114,17 @@ class modLmdbPropalPV extends DolibarrModules
 		$initialPdfSetupRequired = !getDolGlobalInt('LMDBPROPALPV_INITIAL_PDF_SETUP_DONE');
 		if ($initialPdfSetupRequired) {
 			if ($this->initializeProposalModels() < 0) {
+				return -1;
+			}
+		}
+		if (!getDolGlobalInt('LMDBPROPALPV_DOCUMENT_MODEL_METADATA_FIXED')) {
+			dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
+			if (lmdbpropalpvNormalizeProposalModelMetadata($this->db, (int) $conf->entity, $langs) < 0) {
+				$this->error = $this->db->lasterror();
+				return -1;
+			}
+			if (dolibarr_set_const($this->db, 'LMDBPROPALPV_DOCUMENT_MODEL_METADATA_FIXED', '1', 'chaine', 0, '', (int) $conf->entity) <= 0) {
+				$this->error = $this->db->lasterror();
 				return -1;
 			}
 		}
@@ -234,7 +247,7 @@ class modLmdbPropalPV extends DolibarrModules
 			}
 			$exists = is_object($this->db->fetch_object($resql));
 			$this->db->free($resql);
-			if (!$exists && addDocumentModel($name, 'propal', $langs->trans($label), $langs->trans('LmdbPropalPVModuleDescription')) <= 0) {
+			if (!$exists && addDocumentModel($name, 'propal', $langs->trans($label)) <= 0) {
 				$this->error = $this->db->lasterror();
 				return -1;
 			}

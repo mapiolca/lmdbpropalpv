@@ -11,6 +11,7 @@
 - Contrôle indicatif de raccordement selon la Pmax Enedis, caractéristiques AC et phases des onduleurs PowerPlantPV, suggestion de puissance souscrite et alertes non bloquantes dans l’onglet et les deux PDF.
 - Type de raccordement monophasé/triphasé enregistré comme snapshot du devis et repli sans erreur sur la puissance-crête lorsque les données onduleur sont incomplètes.
 - Tooltips natifs Dolibarr réparés, titre navigateur enrichi de la référence du devis et noms des deux modèles de documents réellement traduits.
+- Métadonnées natives des modèles PV corrigées et choix par entité du modèle PDF actif utilisé comme corps commercial, avec repli sûr sur Cyan.
 - Libellé technique du module remplacé dans l’interface par le nom traduit « Propositions commerciales PV », sans modifier sa clé interne `lmdbpropalpv`.
 - États complet, incomplet et consultatif affichés avec les badges natifs Dolibarr.
 - Historique officiel embarqué des tarifs S21 et TRVE depuis 2021, avec sources et empreintes SHA-256.

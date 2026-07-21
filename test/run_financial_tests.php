@@ -31,6 +31,16 @@ foreach (array(0.0, 4.0, 36.5, 250.5, 251.0) as $unsupportedPower) {
 		throw new RuntimeException('Unsupported subscribed power accepted: '.((string) $unsupportedPower).' kVA.');
 	}
 }
+foreach (array('cyan', 'azur', 'jpsun_withpictures') as $safeProposalModel) {
+	if (!lmdbpropalpvBaseProposalModelNameIsSafe($safeProposalModel)) {
+		throw new RuntimeException('A valid commercial proposal model was rejected: '.$safeProposalModel.'.');
+	}
+}
+foreach (array('lmdbpropalpv_withpictures', 'lmdbpropalpv_withoutpictures', 'generic_propale_odt:/tmp/template.odt', '../cyan') as $unsafeProposalModel) {
+	if (lmdbpropalpvBaseProposalModelNameIsSafe($unsafeProposalModel)) {
+		throw new RuntimeException('A recursive or non-PDF proposal model was accepted: '.$unsafeProposalModel.'.');
+	}
+}
 $input = new LmdbPropalPVFinancialInput(1884.7575, 'EUR', 3.0, 3456.0, 0.68, 0.0045, 0.0045, 0.03, 0.2146, 0.04, 80.0);
 $result = $calculator->calculate($input);
 

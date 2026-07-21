@@ -138,9 +138,9 @@ Les modèles natifs `propal` sont :
 - `lmdbpropalpv_withpictures` — PV Signature illustré ;
 - `lmdbpropalpv_withoutpictures` — PV Signature épuré.
 
-Les deux classes publiques sont minces et partagent un renderer. Le corps commercial s’appuie sur le modèle Cyan de la version Dolibarr installée afin de conserver TVA, remises, multicurrency, notes, conditions, hooks et photos produits. Le renderer ajoute une couverture moderne, un encadré jaune de diagnostic de raccordement et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années. La courbe comporte des graduations d’années et de trésorerie, ainsi que les repères horizontal et vertical du point d’amortissement. Le même repère est affiché dans l’onglet du devis.
+Les deux classes publiques sont minces et partagent un renderer. L’administrateur choisit, pour chaque entité, le modèle PDF actif de proposition commerciale qui produit le corps commercial afin de conserver ses lignes, TVA, remises, multicurrency, notes, conditions, hooks et photos produits. Les deux modèles PV Signature et les variantes ODT sont exclus de ce choix pour éviter la récursion et garantir une composition PDF. Cyan reste uniquement le repli sûr lorsqu’un modèle configuré devient indisponible. Le renderer ajoute une couverture moderne, un encadré jaune de diagnostic de raccordement et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années. La courbe comporte des graduations d’années et de trésorerie, ainsi que les repères horizontal et vertical du point d’amortissement. Le même repère est affiché dans l’onglet du devis.
 
-Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv_withoutpictures`, tandis que l’administration native affiche leurs noms traduits « PV Signature illustré » et « PV Signature épuré ».
+Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv_withoutpictures`, tandis que `document_model.libelle` porte les noms traduits « PV Signature illustré » et « PV Signature épuré ». Le champ `document_model.description` reste vide pour que Dolibarr traite ces entrées comme des modèles PHP et non comme des répertoires de modèles fichiers.
 
 La variante illustrée active uniquement la mécanique native de photos produits. Elle ne crée aucun stockage parallèle. La variante épurée désactive la colonne image.
 
@@ -159,7 +159,7 @@ Lors de la première activation d’une entité :
 3. `PROPALE_ADDON_PDF` reçoit `lmdbpropalpv_withpictures` ;
 4. `LMDBPROPALPV_INITIAL_PDF_SETUP_DONE` reçoit `1` après réussite.
 
-Les activations suivantes n’ajoutent, ne réactivent et ne sélectionnent aucun modèle. `remove()` conserve les constantes du module et ne supprime ni extrafields, ni données, ni modèles, ni réglages.
+Les activations suivantes n’ajoutent, ne réactivent et ne sélectionnent aucun modèle. Une migration idempotente unique peut corriger uniquement le libellé et le champ technique `description` des deux lignes appartenant au module, sans changer leur présence, leur activation ni le modèle par défaut. `remove()` conserve les constantes du module et ne supprime ni extrafields, ni données, ni modèles, ni réglages.
 
 Le message d’activation explique ce comportement avant l’action administrateur.
 

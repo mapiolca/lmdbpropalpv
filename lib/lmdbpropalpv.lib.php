@@ -64,6 +64,93 @@ function lmdbpropalpvSubscribedPowerIsSupported($powerKva)
 }
 
 /**
+ * Validate a technical proposal model name that may be used as commercial body.
+ *
+ * The two PV Signature models are excluded to prevent recursive generation.
+ * Filename-based ODT variants are excluded because the PV renderer composes PDF
+ * pages only.
+ *
+ * @param string $model Model technical name
+ * @return bool
+ */
+function lmdbpropalpvBaseProposalModelNameIsSafe($model)
+{
+	if (!preg_match('/^[a-z0-9_]+$/', $model)) {
+		return false;
+	}
+
+	return !in_array($model, array('lmdbpropalpv_withpictures', 'lmdbpropalpv_withoutpictures'), true);
+}
+
+/**
+ * Return active PHP proposal models that can provide the commercial PDF body.
+ *
+ * The native Cyan model remains available as a safe fallback even when its row
+ * is not active, preserving the historical behaviour of the module.
+ *
+ * @param DoliDB $db     Database handler
+ * @param int    $entity Entity id
+ * @return array<string,string>
+ */
+function lmdbpropalpvGetBaseProposalModelOptions($db, $entity)
+{
+	global $langs;
+
+	$options = array('cyan' => $langs->trans('LmdbPropalPVCyanBaseModel'));
+	$sql = 'SELECT nom, libelle, entity FROM '.MAIN_DB_PREFIX.'document_model';
+	$sql .= " WHERE type = 'propal'";
+	$sql .= ' AND entity IN (0, '.((int) $entity).')';
+	$sql .= " AND (description IS NULL OR description = '')";
+	$sql .= ' ORDER BY entity DESC, libelle ASC, nom ASC';
+	$resql = $db->query($sql);
+	if (!$resql) {
+		return $options;
+	}
+	while (is_object($obj = $db->fetch_object($resql))) {
+		$model = (string) $obj->nom;
+		if (!lmdbpropalpvBaseProposalModelNameIsSafe($model) || isset($options[$model])) {
+			continue;
+		}
+		$label = trim((string) $obj->libelle);
+		$options[$model] = $label !== '' ? $label : $model;
+	}
+	$db->free($resql);
+
+	return $options;
+}
+
+/**
+ * Repair the native metadata of the two PV proposal models without changing
+ * their activation state or the administrator's default model.
+ *
+ * Dolibarr reserves document_model.description for a directory constant used
+ * by filename-based templates. PHP PDF models must therefore keep it empty.
+ *
+ * @param DoliDB    $db     Database handler
+ * @param int       $entity Entity id
+ * @param Translate $langs  Translation handler
+ * @return int 1 on success, -1 on error
+ */
+function lmdbpropalpvNormalizeProposalModelMetadata($db, $entity, $langs)
+{
+	$models = array(
+		'lmdbpropalpv_withpictures' => 'LmdbPropalPVModelWithPictures',
+		'lmdbpropalpv_withoutpictures' => 'LmdbPropalPVModelWithoutPictures',
+	);
+	foreach ($models as $model => $translationKey) {
+		$sql = 'UPDATE '.MAIN_DB_PREFIX.'document_model';
+		$sql .= " SET libelle = '".$db->escape($langs->trans($translationKey))."', description = NULL";
+		$sql .= " WHERE nom = '".$db->escape($model)."'";
+		$sql .= " AND type = 'propal' AND entity = ".((int) $entity);
+		if (!$db->query($sql)) {
+			return -1;
+		}
+	}
+
+	return 1;
+}
+
+/**
  * Return whether a user is an administrator for the current functional scope.
  *
  * This adds real elevation logic and is therefore intentionally not a wrapper

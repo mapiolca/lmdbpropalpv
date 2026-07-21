@@ -10,17 +10,16 @@ dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
 /**
  * Shared renderer for the two PV Signature proposal models.
  *
- * Cyan remains the source of truth for commercial lines, VAT, discounts,
- * multicurrency, public notes and payment conditions. This renderer prepends a
- * modern cover and appends the optional financial study, then merges the pages
- * through Dolibarr's native TCPDI stack.
+ * The proposal model selected in the module settings remains the source of
+ * truth for commercial lines, VAT, discounts, multicurrency, public notes and
+ * payment conditions. This renderer prepends a modern cover and appends the
+ * optional financial study, then merges the pages through Dolibarr's native
+ * TCPDI stack.
  */
 abstract class LmdbPropalPVPdfBase extends pdf_cyan
 {
 	/** @var bool */
 	protected $withPictures = false;
-	/** @var bool */
-	private $commercialBodyInProgress = false;
 
 	/**
 	 * @param Propal    $object Proposal
@@ -33,8 +32,9 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	 */
 	public function write_file($object, $outputlangs, $srctemplatepath = '', $hidedetails = 0, $hidedesc = 0, $hideref = 0)
 	{
-		global $conf;
+		global $conf, $mysoc;
 		$this->configureEmitterForEntity($object);
+		$baseProposalModel = $this->resolveBaseProposalModel($object);
 
 		$hadPictureSetting = isset($conf->global->MAIN_GENERATE_PROPOSALS_WITH_PICTURE);
 		$previousPictureSetting = $hadPictureSetting ? $conf->global->MAIN_GENERATE_PROPOSALS_WITH_PICTURE : null;
@@ -44,18 +44,21 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$previousFreeText = $hadFreeText ? $conf->global->PROPOSAL_FREE_TEXT : null;
 		$hadFootDetails = isset($conf->global->MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS);
 		$previousFootDetails = $hadFootDetails ? $conf->global->MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS : null;
+		$previousEmitter = $mysoc;
+		$previousObjectModel = isset($object->model_pdf) ? (string) $object->model_pdf : '';
 		$conf->global->MAIN_GENERATE_PROPOSALS_WITH_PICTURE = $this->withPictures ? 1 : 0;
 		// The shared renderer owns the final acceptance page and the final native
 		// footer, after the financial study.
 		$conf->global->PROPAL_DISABLE_SIGNATURE = 1;
 		$conf->global->PROPOSAL_FREE_TEXT = '';
 		$conf->global->MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS = lmdbpropalpvGetEntityStringConstant($this->db, 'MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS', '0', (int) $object->entity);
+		$mysoc = $this->emetteur;
 		$result = 0;
-		$this->commercialBodyInProgress = true;
 		try {
-			$result = parent::write_file($object, $outputlangs, $srctemplatepath, $hidedetails, $hidedesc, $hideref);
+			$result = $object->generateDocument($baseProposalModel, $outputlangs, $hidedetails, $hidedesc, $hideref);
 		} finally {
-			$this->commercialBodyInProgress = false;
+			$mysoc = $previousEmitter;
+			$object->model_pdf = $previousObjectModel;
 			if ($hadPictureSetting) {
 				$conf->global->MAIN_GENERATE_PROPOSALS_WITH_PICTURE = $previousPictureSetting;
 			} else {
@@ -115,13 +118,13 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$this->error = $outputlangs->transnoentities('LmdbPropalPVErrorPdfInstall');
 			return 0;
 		}
+		$this->result = array('fullpath' => $file);
 
 		return 1;
 	}
 
 	/**
-	 * Keep every page of the commercial body in intermediate-footer mode.
-	 * The final footer is printed only on the acceptance page after composition.
+	 * Render the footer of the PV-owned pages with the proposal owner entity.
 	 *
 	 * @return int
 	 */
@@ -129,8 +132,8 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	{
 		global $conf;
 
-		if ($this->commercialBodyInProgress || empty($object->entity) || (int) $object->entity === (int) $conf->entity) {
-			return parent::_pagefoot($pdf, $object, $outputlangs, $this->commercialBodyInProgress ? 1 : $hidefreetext);
+		if (empty($object->entity) || (int) $object->entity === (int) $conf->entity) {
+			return parent::_pagefoot($pdf, $object, $outputlangs, $hidefreetext);
 		}
 		$hadFreeText = isset($conf->global->PROPOSAL_FREE_TEXT);
 		$previousFreeText = $hadFreeText ? $conf->global->PROPOSAL_FREE_TEXT : null;
@@ -152,6 +155,28 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 				unset($conf->global->MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS);
 			}
 		}
+	}
+
+	/**
+	 * Resolve the entity-owned proposal model used for the commercial PDF body.
+	 *
+	 * @param Propal $object Proposal
+	 * @return string
+	 */
+	private function resolveBaseProposalModel($object)
+	{
+		global $conf;
+
+		$entity = !empty($object->entity) ? (int) $object->entity : (int) $conf->entity;
+		$configured = lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'cyan', $entity);
+		$options = lmdbpropalpvGetBaseProposalModelOptions($this->db, $entity);
+		if (lmdbpropalpvBaseProposalModelNameIsSafe($configured) && isset($options[$configured])) {
+			return $configured;
+		}
+
+		dol_syslog(__METHOD__.' unavailable or recursive proposal model '.$configured.', fallback to cyan', LOG_WARNING);
+
+		return 'cyan';
 	}
 
 	/**

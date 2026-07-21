@@ -14,6 +14,7 @@ if (!lmdbpropalpvCanDo($user, 'setup')) {
 	accessforbidden();
 }
 
+$baseProposalModelOptions = lmdbpropalpvGetBaseProposalModelOptions($db, (int) $conf->entity);
 $action = GETPOST('action', 'aZ09');
 if ($action === 'save') {
 	if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -28,6 +29,7 @@ if ($action === 'save') {
 		'LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA' => GETPOST('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', 'alphanohtml'),
 		'LMDBPROPALPV_PDF_PRIMARY_COLOR' => strtoupper(GETPOST('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'alphanohtml')),
 		'LMDBPROPALPV_PDF_ACCENT_COLOR' => strtoupper(GETPOST('LMDBPROPALPV_PDF_ACCENT_COLOR', 'alphanohtml')),
+		'LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL' => GETPOST('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'aZ09'),
 		'LMDBPROPALPV_FINANCIAL_DISCLAIMER' => GETPOST('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'restricthtml'),
 	);
 	$error = 0;
@@ -53,6 +55,10 @@ if ($action === 'save') {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidSubscription'), null, 'errors');
 		$error++;
 	}
+	if (!lmdbpropalpvBaseProposalModelNameIsSafe($values['LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL']) || !isset($baseProposalModelOptions[$values['LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL']])) {
+		setEventMessages($langs->trans('LmdbPropalPVInvalidBaseProposalModel'), null, 'errors');
+		$error++;
+	}
 	foreach (array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LMDBPROPALPV_PDF_ACCENT_COLOR') as $colorName) {
 		if (!preg_match('/^#[0-9A-F]{6}$/', $values[$colorName])) {
 			setEventMessages($langs->trans('LmdbPropalPVInvalidColor', $colorName), null, 'errors');
@@ -60,11 +66,23 @@ if ($action === 'save') {
 		}
 	}
 	if (!$error) {
+		$db->begin();
 		foreach ($values as $name => $value) {
 			if (dolibarr_set_const($db, $name, $value, 'chaine', 0, '', (int) $conf->entity) <= 0) {
 				$error++;
 				break;
 			}
+		}
+		if (!$error && lmdbpropalpvNormalizeProposalModelMetadata($db, (int) $conf->entity, $langs) < 0) {
+			$error++;
+		}
+		if (!$error && dolibarr_set_const($db, 'LMDBPROPALPV_DOCUMENT_MODEL_METADATA_FIXED', '1', 'chaine', 0, '', (int) $conf->entity) <= 0) {
+			$error++;
+		}
+		if ($error) {
+			$db->rollback();
+		} else {
+			$db->commit();
 		}
 	}
 	if ($error) {
@@ -98,6 +116,14 @@ print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs-
 print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', lmdbpropalpvGetSubscribedPowerOptions(), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
 print '</td></tr>';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVPdfAppearance').'</th></tr>';
+$currentBaseProposalModel = getDolGlobalString('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'cyan');
+$baseProposalModelSelectOptions = $baseProposalModelOptions;
+if (!isset($baseProposalModelSelectOptions[$currentBaseProposalModel])) {
+	$baseProposalModelSelectOptions[$currentBaseProposalModel] = $langs->trans('LmdbPropalPVUnavailableBaseProposalModel', $currentBaseProposalModel);
+}
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVBaseProposalModel'), $langs->trans('LmdbPropalPVBaseProposalModelHelp'), 1, 'help').'</td><td>';
+print $form->selectarray('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', $baseProposalModelSelectOptions, $currentBaseProposalModel, 0, 0, 0, '', 0, 0, 0, '', 'minwidth300');
+print '</td></tr>';
 lmdbpropalpvSetupTextRow('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LmdbPropalPVPdfPrimaryColor', '#16324F', 'maxwidth100');
 lmdbpropalpvSetupTextRow('LMDBPROPALPV_PDF_ACCENT_COLOR', 'LmdbPropalPVPdfAccentColor', '#F2B705', 'maxwidth100');
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVFinancialDisclaimer').'</td><td><textarea class="flat centpercent" rows="3" name="LMDBPROPALPV_FINANCIAL_DISCLAIMER">'.dol_escape_htmltag(getDolGlobalString('LMDBPROPALPV_FINANCIAL_DISCLAIMER')).'</textarea></td></tr>';
