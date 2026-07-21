@@ -3,7 +3,7 @@
 
 require '../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/comm/propal/class/propal.class.php';
-require_once DOL_DOCUMENT_ROOT.'/comm/propal/lib/propal.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/propal.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
 dol_include_once('/lmdbpropalpv/class/lmdbpropalpvstudyservice.class.php');

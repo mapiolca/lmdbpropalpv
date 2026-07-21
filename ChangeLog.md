@@ -8,4 +8,5 @@
 - Onglet natif sur les propositions commerciales, snapshots tarifaires et rechargement explicite.
 - Modèles PDF « PV Signature illustré » et « PV Signature épuré », photos produits natives et signature en ligne par QR code.
 - Première activation conservatrice, réglages par entité, droits granulaires et compatibilité Multicompany.
+- Correction du chargement de la bibliothèque native des propositions commerciales sur Dolibarr v20+.
 - Documentation fonctionnelle, paquet de prompts et matrice de tests manuels.
