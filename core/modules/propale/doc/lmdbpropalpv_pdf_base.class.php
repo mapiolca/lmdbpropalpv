@@ -92,7 +92,14 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$temporarySuffix = substr(dol_hash(uniqid((string) $object->id, true), 3), 0, 16);
 		$supplement = dirname($file).'/'.pathinfo($file, PATHINFO_FILENAME).'_lmdbpropalpv_'.$temporarySuffix.'_supplement.pdf';
 		$merged = dirname($file).'/'.pathinfo($file, PATHINFO_FILENAME).'_lmdbpropalpv_'.$temporarySuffix.'_merged.pdf';
-		if (!$this->createSupplement($object, $outputlangs, $study, $supplement)) {
+		try {
+			$supplementCreated = $this->createSupplement($object, $outputlangs, $study, $supplement);
+		} catch (Throwable $exception) {
+			$this->error = $outputlangs->transnoentities('LmdbPropalPVErrorPdfSupplement').': '.$exception->getMessage();
+			dol_syslog(__METHOD__.' '.$this->error, LOG_ERR);
+			$supplementCreated = false;
+		}
+		if (!$supplementCreated) {
 			dol_delete_file($supplement, 0, 1, 1, null, false, 0);
 			return 0;
 		}
@@ -263,7 +270,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	}
 
 	/** @return void */
-	private function addProtectedPage($pdf, $object, $hideFreeText)
+	private function addProtectedPage(&$pdf, $object, $hideFreeText)
 	{
 		$footerHeight = $this->getFooterHeight($pdf, $object, (bool) $hideFreeText);
 		$pdf->AddPage();
@@ -274,7 +281,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	}
 
 	/** @return float */
-	private function getFooterHeight($pdf, $object, $hideFreeText)
+	private function getFooterHeight(&$pdf, $object, $hideFreeText)
 	{
 		$ownerEntity = !empty($object->entity) ? (int) $object->entity : 0;
 		$freetext = $hideFreeText ? '' : lmdbpropalpvGetEntityStringConstant($this->db, 'PROPOSAL_FREE_TEXT', '', $ownerEntity);
