@@ -94,7 +94,7 @@ lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'LmdbP
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVRetailTariffMode').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', array('base' => $langs->trans('LmdbPropalPVBase'), 'peak' => $langs->trans('LmdbPropalPVPeakHours'), 'manual' => $langs->trans('LmdbPropalPVManual')), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'base'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth200');
 print '</td></tr>';
-print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVSubscribedPower').' '.img_help(1, $langs->trans('LmdbPropalPVSubscribedPowerHelp')).'</td><td>';
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVSubscribedPower'), $langs->trans('LmdbPropalPVSubscribedPowerHelp'), 1, 'help').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', lmdbpropalpvGetSubscribedPowerOptions(), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
 print '</td></tr>';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVPdfAppearance').'</th></tr>';

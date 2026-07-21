@@ -4,6 +4,8 @@
 require_once dirname(__DIR__).'/class/lmdbpropalpvfinancialcalculator.class.php';
 require_once dirname(__DIR__).'/class/lmdbpropalpvtariffmatcher.class.php';
 require_once dirname(__DIR__).'/class/lmdbpropalpvpaneldegradationresolver.class.php';
+require_once dirname(__DIR__).'/class/lmdbpropalpvinverterpowerresolver.class.php';
+require_once dirname(__DIR__).'/class/lmdbpropalpvconnectionpowerchecker.class.php';
 require_once dirname(__DIR__).'/lib/lmdbpropalpv.lib.php';
 
 /** @throws RuntimeException */
@@ -139,6 +141,69 @@ assertNear($fallback['first_year_degradation_pct'], 0.45, 0.000000001, 'No-modul
 assertNear($fallback['annual_degradation_pct'], 0.45, 0.000000001, 'No-module annual fallback');
 if ($fallback['warning_keys'] !== array('LmdbPropalPVDegradationFallbackNoEligibleModule')) {
 	throw new RuntimeException('No-module fallback warning is missing.');
+}
+
+$inverters = LmdbPropalPVInverterPowerResolver::aggregate(array(
+	array('product_ref' => 'INV-A', 'quantity' => 2.0, 'ac_nominal_power_w' => 3000.0, 'phase_count' => 1),
+	array('product_ref' => 'INV-B', 'quantity' => 3.0, 'ac_nominal_power_w' => 5000.0, 'phase_count' => 3),
+));
+assertNear((float) $inverters['total_nominal_power_kva'], 21.0, 0.000000001, 'Inverter nominal AC aggregation');
+if (!$inverters['data_complete'] || !$inverters['has_three_phase']) {
+	throw new RuntimeException('Complete mixed inverter rows must be exact and detect three-phase products.');
+}
+
+$partialInverters = LmdbPropalPVInverterPowerResolver::aggregate(array(
+	array('product_ref' => 'INV-OK', 'quantity' => 1.0, 'ac_nominal_power_w' => 3000.0, 'phase_count' => 1),
+	array('product_ref' => 'INV-MISSING', 'quantity' => 1.0, 'ac_nominal_power_w' => null, 'phase_count' => 3),
+));
+assertNear((float) $partialInverters['total_nominal_power_kva'], 3.0, 0.000000001, 'Partial inverter nominal AC aggregation');
+if ($partialInverters['data_complete'] || $partialInverters['product_refs'] !== array('INV-MISSING')) {
+	throw new RuntimeException('A missing inverter power must make the connection verification incomplete and report its reference.');
+}
+
+$connectionChecker = new LmdbPropalPVConnectionPowerChecker();
+foreach (array(
+	array(5.0, 6.0, 5.0),
+	array(6.0, 6.0, 6.0),
+	array(8.0, 6.0, 6.0),
+) as $pmaxCase) {
+	$checked = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput($pmaxCase[0], $pmaxCase[1], 9.0, 'single', true));
+	assertNear($checked->referencePowerKva, $pmaxCase[2], 0.000000001, 'Enedis Pmax minimum rule');
+}
+
+$insufficient = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(10.0, 12.0, 9.0, 'three', true));
+if ($insufficient->status !== LmdbPropalPVConnectionPowerResult::STATUS_INCREASE_TO_CHECK || $insufficient->recommendedSubscribedPowerKva !== 12.0) {
+	throw new RuntimeException('An insufficient subscription must suggest the next supported Blue power.');
+}
+
+$yellowBoundary = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(36.1, 50.0, 36.0, 'three', true));
+if ($yellowBoundary->recommendedSubscribedPowerKva !== 37.0 || !in_array('LmdbPropalPVConnectionAbove36Study', $yellowBoundary->warningKeys, true)) {
+	throw new RuntimeException('A Pmax just above 36 kVA must suggest 37 kVA and require a dedicated connection study.');
+}
+
+$aboveYellow = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(251.0, 300.0, 250.0, 'three', true));
+if ($aboveYellow->recommendedSubscribedPowerKva !== null || !in_array('LmdbPropalPVConnectionNoAutomaticPowerRecommendation', $aboveYellow->warningKeys, true)) {
+	throw new RuntimeException('No automatic subscribed power may be suggested above 250 kVA.');
+}
+
+$singleSix = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(6.0, 6.0, 6.0, 'single', true));
+if ($singleSix->status !== LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT) {
+	throw new RuntimeException('Single-phase Pmax at exactly 6 kVA must be accepted by the simplified check.');
+}
+$singleAboveSix = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(6.01, 7.0, 9.0, 'single', true));
+if ($singleAboveSix->status !== LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE) {
+	throw new RuntimeException('Single-phase Pmax above 6 kVA must be reported as phase-incompatible.');
+}
+
+$threePhase = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(20.0, 20.0, 24.0, 'three', true));
+if (!in_array('LmdbPropalPVConnectionThreePhaseBalanceCheck', $threePhase->warningKeys, true)) {
+	throw new RuntimeException('Three-phase checks up to 36 kVA must include the balancing reminder.');
+}
+
+$incompleteConnection = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(9.0, null, 12.0, 'three', false));
+assertNear($incompleteConnection->referencePowerKva, 9.0, 0.000000001, 'Conservative peak-power fallback');
+if ($incompleteConnection->status !== LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE) {
+	throw new RuntimeException('Missing inverter data must never produce a fatal error or an exact connection status.');
 }
 
 print "All financial calculator tests passed.\n";

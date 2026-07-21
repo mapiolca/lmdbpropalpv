@@ -36,6 +36,7 @@ Les hypothèses saisies sont :
 - date de référence tarifaire ;
 - profil Base, Heures pleines ou Manuel ;
 - puissance souscrite, avec les puissances usuelles du Tarif Bleu et toutes les puissances entières du Tarif Jaune de 37 à 250 kVA ;
+- type de raccordement monophasé ou triphasé ;
 - prix de l’électricité ;
 - tarif de vente du surplus ;
 - prime par kWc.
@@ -44,13 +45,23 @@ Les valeurs initiales sont 68 %, 0,45 % pour chacune des deux dégradations et 3
 
 Le premier enregistrement copie les deux taux dans le devis. Les modifications ultérieures des fiches produits n’ont aucun effet jusqu’à l’action POST explicite « Recharger les caractéristiques panneaux », réservée aux devis brouillons modifiables.
 
-### 3.2 États
+Le titre du navigateur est composé de la référence du devis et du libellé traduit de l’onglet, par exemple `PROV1215 - Étude financière PV`. Les aides utilisent exclusivement les tooltips natifs `Form::textwithpicto()` avec un contenu traduit non vide.
+
+### 3.2 Contrôle indicatif de raccordement
+
+Les lignes de produits PowerPlantPV de catégorie `ONDULE`, avec quantité positive, alimentent la somme `quantité × ac_nominal_power`, convertie de W en kVA. La puissance installée de référence est `Pmax = min(puissance-crête, somme des puissances AC nominales des onduleurs)`, conformément à la [demande de raccordement Enedis](https://www.enedis.fr/media/1946/download). Les produits et leurs caractéristiques suivent les entités accessibles selon `getEntity('product')`.
+
+Si une table, une colonne ou une puissance nominale manque, la puissance-crête devient la référence prudente et le statut est « Vérification incomplète ». Le défaut reste non bloquant. Le type proposé est triphasé si Pmax dépasse 6 kVA ou si un onduleur est triphasé, monophasé sinon. Il est enregistré dans `lmdbpropalpv_connection_phase_mode` au premier enregistrement puis reste modifiable uniquement sur un devis brouillon.
+
+Le contrôle compare Pmax à la puissance souscrite et propose le plus petit palier Bleu ou Jaune disponible. Au-delà de 250 kVA, il demande une étude spécifique. La règle stricte est explicitement formulée par Enedis pour [l’autoconsommation sans injection](https://www.enedis.fr/media/1955/download) ; pour la vente du surplus, une puissance souscrite inférieure déclenche donc seulement une alerte « augmentation à vérifier » auprès du fournisseur ou d’Enedis, sans déclarer automatiquement l’installation non conforme. En monophasé, Pmax supérieure à 6 kVA est signalée. En triphasé jusqu’à 36 kVA, l’interface rappelle les limites de 12 kVA par phase et de 6 kVA de déséquilibre ; au-delà de 36 kVA, elle oriente vers une étude de raccordement dédiée.
+
+### 3.3 États
 
 Le devis au brouillon est modifiable si l’utilisateur dispose des droits sur les propositions et du droit module `study/write`. Après validation, toutes les données sont consultatives.
 
 Le rechargement d’un barème ou des caractéristiques panneaux est une action explicite. Une nouvelle release ou une modification administrative n’écrase jamais un devis existant.
 
-### 3.3 Complétude
+### 3.4 Complétude
 
 L’étude est complète lorsque la puissance-crête, le total TTC, la production, les pourcentages, le prix réseau, le barème de surplus et la date de référence sont valides. Les valeurs nulles de prime ou de tarif de vente restent autorisées lorsqu’elles sont prévues par le barème officiel.
 
@@ -84,7 +95,7 @@ Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 % en première année, 0,45 % 
 
 ## 5. Stockage
 
-Les hypothèses sont stockées dans 12 extrafields `propal`, invisibles sur la fiche principale :
+Les hypothèses sont stockées dans 13 extrafields `propal`, invisibles sur la fiche principale :
 
 - `lmdbpropalpv_annual_production_kwh` ;
 - `lmdbpropalpv_self_consumption_pct` ;
@@ -94,6 +105,7 @@ Les hypothèses sont stockées dans 12 extrafields `propal`, invisibles sur la f
 - `lmdbpropalpv_tariff_reference_date` ;
 - `lmdbpropalpv_retail_tariff_mode` ;
 - `lmdbpropalpv_retail_subscription_kva` ;
+- `lmdbpropalpv_connection_phase_mode` ;
 - `lmdbpropalpv_retail_price_per_kwh` ;
 - `lmdbpropalpv_feed_in_price_per_kwh` ;
 - `lmdbpropalpv_premium_per_kwp` ;
@@ -126,7 +138,9 @@ Les modèles natifs `propal` sont :
 - `lmdbpropalpv_withpictures` — PV Signature illustré ;
 - `lmdbpropalpv_withoutpictures` — PV Signature épuré.
 
-Les deux classes publiques sont minces et partagent un renderer. Le corps commercial s’appuie sur le modèle Cyan de la version Dolibarr installée afin de conserver TVA, remises, multicurrency, notes, conditions, hooks et photos produits. Le renderer ajoute une couverture moderne et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années. La courbe comporte des graduations d’années et de trésorerie, ainsi que les repères horizontal et vertical du point d’amortissement. Le même repère est affiché dans l’onglet du devis.
+Les deux classes publiques sont minces et partagent un renderer. Le corps commercial s’appuie sur le modèle Cyan de la version Dolibarr installée afin de conserver TVA, remises, multicurrency, notes, conditions, hooks et photos produits. Le renderer ajoute une couverture moderne, un encadré jaune de diagnostic de raccordement et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années. La courbe comporte des graduations d’années et de trésorerie, ainsi que les repères horizontal et vertical du point d’amortissement. Le même repère est affiché dans l’onglet du devis.
+
+Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv_withoutpictures`, tandis que l’administration native affiche leurs noms traduits « PV Signature illustré » et « PV Signature épuré ».
 
 La variante illustrée active uniquement la mécanique native de photos produits. Elle ne crée aucun stockage parallèle. La variante épurée désactive la colonne image.
 
@@ -173,4 +187,4 @@ Les identifiants sont calculés à partir de `450010 * 100 + r`. Un administrate
 
 ## 11. Recette
 
-La recette couvre le cas de référence, les bornes de puissance, les périodes absentes ou superposées, les données invalides, le verrouillage après validation, les deux modèles PDF, les photos, la signature, les pieds, deux entités, le multicurrency, les administrateurs et utilisateurs standards, Dolibarr 20/PHP 8.0, PHPStan et l’absence de modification hors module.
+La recette couvre le cas de référence, les bornes de puissance, la Pmax et les phases des onduleurs, les paliers de puissance souscrite, les replis de schéma, les périodes absentes ou superposées, les données invalides, le verrouillage après validation, les deux modèles PDF, les tooltips, le titre navigateur, les photos, la signature, les pieds, deux entités, le multicurrency, les administrateurs et utilisateurs standards, Dolibarr 20/PHP 8.0, PHPStan et l’absence de modification hors module.

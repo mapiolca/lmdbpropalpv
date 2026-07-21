@@ -22,10 +22,20 @@
 | TRVE | Heures pleines 6 à 36 kVA | composante HP TTC correcte pour la date |
 | Tarif Jaune | sélectionner 37, 42, 100 et 250 kVA dans les réglages, l’étude et un barème personnalisé | chaque puissance est proposée et enregistrée ; 36,5 et 251 kVA sont refusés |
 | Tarif Jaune | recharger un barème personnalisé correspondant exactement à la date, la devise, le profil et la puissance | prix réseau rechargé ; aucune extrapolation depuis une autre puissance |
+| Raccordement | puissance-crête inférieure, égale puis supérieure à la somme AC nominale des onduleurs | Pmax égale au minimum exact des deux puissances |
+| Raccordement | plusieurs onduleurs avec quantités distinctes | somme exacte de `quantité × ac_nominal_power`, exprimée en kVA |
+| Raccordement | puissance nominale, table ou colonne absente | statut « Vérification incomplète », repli sur la puissance-crête et aucune erreur fatale |
+| Puissance souscrite | Pmax 10 kVA avec 9 kVA souscrits, puis Pmax 36,1 kVA | alerte informative et suggestions respectives de 12 et 37 kVA |
+| Puissance souscrite | Pmax supérieure à 250 kVA | aucune suggestion automatique et demande d’étude spécifique |
+| Phases | monophasé à 6 puis 6,01 kVA | premier cas accepté, second signalé comme raccordement à revoir |
+| Phases | triphasé jusqu’à 36 kVA puis au-delà | rappel 12 kVA/phase et déséquilibre 6 kVA, puis orientation vers une étude BT dédiée |
+| Snapshot raccordement | devis neuf, sauvegarde, duplication et devis validé | type de raccordement proposé puis conservé ; lecture seule après validation |
 | Devise | devis dans une devise sans barème | étude incomplète, message explicite |
 | PDF illustré | aucune, quelques et toutes les photos produits | colonne propre, aucun emplacement cassé |
 | PDF épuré | produits avec photos | aucune colonne image |
 | PDF | lignes et notes longues, plusieurs pages | pas de chevauchement avec le pied |
+| PDF raccordement | générer les deux modèles avec contrôle conforme, alerte et vérification incomplète | même encadré jaune, valeurs et messages cohérents avec l’onglet |
+| Modèles PDF | ouvrir l’administration native en français puis en anglais | noms traduits « PV Signature illustré/épuré » et équivalents anglais, identifiants techniques inchangés |
 | Graphiques | étude avec amortissement atteint | ligne horizontale jusqu’au point zéro et verticale jusqu’à l’axe des années dans l’onglet et le PDF |
 | Graphique PDF | valeurs négatives et positives sur 20 ans | graduations de trésorerie et d’années lisibles, courbe non tronquée |
 | Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | toutes les données de la projection suivent la précision totale dans l’onglet et les PDF, sauf « Prix réseau » qui suit la précision unitaire |
@@ -37,3 +47,5 @@
 | Droits | lecture seule | consultation, aucune écriture |
 | Droits | sans droit | accès refusé |
 | Compatibilité | Dolibarr 20 / PHP 8.0 | activation et pages sans erreur fatale |
+| Interface | survoler toutes les icônes d’aide de l’onglet, des réglages et des barèmes | tooltip natif visible avec `classfortooltip` et texte non vide |
+| Navigateur | ouvrir le devis `PROV1215` en français | titre exact `PROV1215 - Étude financière PV` |

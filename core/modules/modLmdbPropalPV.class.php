@@ -173,6 +173,7 @@ class modLmdbPropalPV extends DolibarrModules
 			array('lmdbpropalpv_tariff_reference_date', 'LmdbPropalPVTariffReferenceDate', 'date', '', ''),
 			array('lmdbpropalpv_retail_tariff_mode', 'LmdbPropalPVRetailTariffMode', 'select', '16', array('options' => array('base' => 'LmdbPropalPVBase', 'peak' => 'LmdbPropalPVPeakHours', 'manual' => 'LmdbPropalPVManual'))),
 			array('lmdbpropalpv_retail_subscription_kva', 'LmdbPropalPVSubscribedPower', 'double', '8,4', ''),
+			array('lmdbpropalpv_connection_phase_mode', 'LmdbPropalPVConnectionPhaseMode', 'select', '16', array('options' => array('single' => 'LmdbPropalPVSinglePhase', 'three' => 'LmdbPropalPVThreePhase'))),
 			array('lmdbpropalpv_retail_price_per_kwh', 'LmdbPropalPVRetailPrice', 'double', '24,8', ''),
 			array('lmdbpropalpv_feed_in_price_per_kwh', 'LmdbPropalPVFeedInPrice', 'double', '24,8', ''),
 			array('lmdbpropalpv_premium_per_kwp', 'LmdbPropalPVPremiumPerKwp', 'double', '24,8', ''),

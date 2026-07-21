@@ -12,7 +12,7 @@ class pdf_lmdbpropalpv_withoutpictures extends LmdbPropalPVPdfBase
 		global $langs;
 		parent::__construct($db);
 		$langs->load('lmdbpropalpv@lmdbpropalpv');
-		$this->name = 'lmdbpropalpv_withoutpictures';
+		$this->name = $langs->trans('LmdbPropalPVModelWithoutPictures');
 		$this->description = $langs->trans('DocModelLmdbPropalPVWithoutPicturesDescription');
 		$this->withPictures = false;
 		$this->update_main_doc_field = 1;

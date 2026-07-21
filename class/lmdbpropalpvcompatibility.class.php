@@ -2,6 +2,7 @@
 /* Copyright (C) 2026 Pierre Ardoin <developpeur@lesmetiersdubatiment.fr> */
 
 require_once __DIR__.'/lmdbpropalpvpaneldegradationresolver.class.php';
+require_once __DIR__.'/lmdbpropalpvinverterpowerresolver.class.php';
 
 /** Compatibility registry for all conditional features. */
 class LmdbPropalPVCompatibility
@@ -25,6 +26,7 @@ class LmdbPropalPVCompatibility
 		$helperAvailable = function_exists('powerplantpvGetObjectPeakPowerKwc');
 		$powerplantCompatible = isModEnabled('powerplantpv') && $helperAvailable && $powerplantVersion !== '' && version_compare($powerplantVersion, '1.3.0', '>=');
 		$degradationSchemaAvailable = $powerplantCompatible && is_object($db) && LmdbPropalPVPanelDegradationResolver::isSchemaAvailable($db);
+		$inverterSchemaAvailable = $powerplantCompatible && is_object($db) && LmdbPropalPVInverterPowerResolver::isSchemaAvailable($db);
 
 		return array(
 			'financial_study' => array(
@@ -59,6 +61,17 @@ class LmdbPropalPVCompatibility
 				'compatibility_check' => "PowerPlantPV >= 1.3.0 && columns pmax, first_year_degradation, annual_degradation available",
 				'available' => $degradationSchemaAvailable,
 				'reason' => 'LmdbPropalPVPanelDegradationFallbackReason',
+			),
+			'powerplant_inverter_connection_power' => array(
+				'label' => 'LmdbPropalPVFeatureInverterConnectionPower',
+				'description' => 'LmdbPropalPVFeatureInverterConnectionPowerDescription',
+				'min_dolibarr' => '20.0.0',
+				'core_available_from' => '20.0.0',
+				'module_available_from' => '20.0.0',
+				'min_php' => '8.0.0',
+				'compatibility_check' => "PowerPlantPV >= 1.3.0 && columns ac_nominal_power, phase_count available",
+				'available' => $inverterSchemaAvailable,
+				'reason' => 'LmdbPropalPVInverterConnectionFallbackReason',
 			),
 			'online_signature' => array(
 				'label' => 'LmdbPropalPVFeatureOnlineSignature',

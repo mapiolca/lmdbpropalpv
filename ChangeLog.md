@@ -8,6 +8,9 @@
 - Montants, durées et pourcentages normalisés selon les décimales totales Dolibarr, avec graphiques enrichis des graduations et repères d’amortissement.
 - Projection annuelle normalisée selon les décimales totales, à l’exception de la colonne « Prix réseau » qui conserve la précision des prix unitaires.
 - Puissances souscrites du Tarif Jaune prises en charge de 37 à 250 kVA, par pas de 1 kVA, dans les réglages, les études et les barèmes personnalisés.
+- Contrôle indicatif de raccordement selon la Pmax Enedis, caractéristiques AC et phases des onduleurs PowerPlantPV, suggestion de puissance souscrite et alertes non bloquantes dans l’onglet et les deux PDF.
+- Type de raccordement monophasé/triphasé enregistré comme snapshot du devis et repli sans erreur sur la puissance-crête lorsque les données onduleur sont incomplètes.
+- Tooltips natifs Dolibarr réparés, titre navigateur enrichi de la référence du devis et noms des deux modèles de documents réellement traduits.
 - États complet, incomplet et consultatif affichés avec les badges natifs Dolibarr.
 - Historique officiel embarqué des tarifs S21 et TRVE depuis 2021, avec sources et empreintes SHA-256.
 - Onglet natif sur les propositions commerciales, snapshots tarifaires et rechargement explicite.

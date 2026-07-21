@@ -4,6 +4,8 @@
 require_once __DIR__.'/lmdbpropalpvfinancialcalculator.class.php';
 require_once __DIR__.'/lmdbpropalpvtariffresolver.class.php';
 require_once __DIR__.'/lmdbpropalpvpaneldegradationresolver.class.php';
+require_once __DIR__.'/lmdbpropalpvinverterpowerresolver.class.php';
+require_once __DIR__.'/lmdbpropalpvconnectionpowerchecker.class.php';
 require_once dirname(__DIR__).'/lib/lmdbpropalpv.lib.php';
 
 /** Build one proposal study from its immutable commercial and optional data. */
@@ -20,7 +22,7 @@ class LmdbPropalPVStudyService
 
 	/**
 	 * @param Propal $propal Loaded proposal
-	 * @return array{complete:bool,missing:list<string>,input:?LmdbPropalPVFinancialInput,result:?LmdbPropalPVFinancialResult,peak_power_kwp:float,investment_ttc:float,currency_code:string,reference_date:string,values:array<string,mixed>,degradation_warning_keys:list<string>,degradation_fallback_product_refs:list<string>,degradation_source:string}
+	 * @return array{complete:bool,missing:list<string>,input:?LmdbPropalPVFinancialInput,result:?LmdbPropalPVFinancialResult,peak_power_kwp:float,investment_ttc:float,currency_code:string,reference_date:string,values:array<string,mixed>,degradation_warning_keys:list<string>,degradation_fallback_product_refs:list<string>,degradation_source:string,connection_result:LmdbPropalPVConnectionPowerResult,connection_warning_keys:list<string>,connection_product_refs:list<string>,connection_source:string}
 	 */
 	public function buildStudy($propal)
 	{
@@ -48,6 +50,16 @@ class LmdbPropalPVStudyService
 		if (!$hasFirstYearDegradation || !$hasAnnualDegradation) {
 			$degradationResolution = $this->resolvePanelDegradation($propal);
 		}
+		$inverterResolution = (new LmdbPropalPVInverterPowerResolver($this->db))->resolveForProposal($propal);
+		$inverterPower = $inverterResolution['total_nominal_power_kva'];
+		$proposedReferencePower = $inverterResolution['data_complete'] && $inverterPower !== null && $inverterPower > 0.0
+			? min($peakPowerKwp, $inverterPower)
+			: $peakPowerKwp;
+		$suggestedPhaseMode = $proposedReferencePower > 6.0 || $inverterResolution['has_three_phase'] ? 'three' : 'single';
+		$phaseMode = $this->optionString($propal, 'lmdbpropalpv_connection_phase_mode', $suggestedPhaseMode);
+		if (!in_array($phaseMode, array('single', 'three'), true)) {
+			$phaseMode = $suggestedPhaseMode;
+		}
 		$values = array(
 			'annual_production_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_annual_production_kwh', 0.0),
 			'self_consumption_pct' => $this->optionFloat($propal, 'lmdbpropalpv_self_consumption_pct', (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', '68', $ownerEntity)),
@@ -57,6 +69,7 @@ class LmdbPropalPVStudyService
 			'reference_date' => $this->optionDate($propal, 'lmdbpropalpv_tariff_reference_date', $proposalDate),
 			'retail_mode' => $this->optionString($propal, 'lmdbpropalpv_retail_tariff_mode', lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'base', $ownerEntity)),
 			'subscription_kva' => $this->optionFloat($propal, 'lmdbpropalpv_retail_subscription_kva', (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6', $ownerEntity)),
+			'connection_phase_mode' => $phaseMode,
 			'retail_price_per_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_retail_price_per_kwh', 0.0),
 			'feed_in_price_per_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_feed_in_price_per_kwh', 0.0),
 			'premium_per_kwp' => $this->optionFloat($propal, 'lmdbpropalpv_premium_per_kwp', 0.0),
@@ -122,6 +135,13 @@ class LmdbPropalPVStudyService
 			);
 			$result = (new LmdbPropalPVFinancialCalculator())->calculate($input);
 		}
+		$connectionResult = (new LmdbPropalPVConnectionPowerChecker())->check(new LmdbPropalPVConnectionPowerInput(
+			$peakPowerKwp,
+			$inverterPower,
+			(float) $values['subscription_kva'],
+			$phaseMode,
+			(bool) $inverterResolution['data_complete']
+		));
 
 		return array(
 			'complete' => empty($missing),
@@ -136,6 +156,10 @@ class LmdbPropalPVStudyService
 			'degradation_warning_keys' => array_values($degradationResolution['warning_keys']),
 			'degradation_fallback_product_refs' => array_values($degradationResolution['fallback_product_refs']),
 			'degradation_source' => (string) $degradationResolution['source'],
+			'connection_result' => $connectionResult,
+			'connection_warning_keys' => array_values(array_unique(array_merge($inverterResolution['warning_keys'], $connectionResult->warningKeys))),
+			'connection_product_refs' => array_values($inverterResolution['product_refs']),
+			'connection_source' => (string) $inverterResolution['source'],
 		);
 	}
 

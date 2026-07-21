@@ -182,8 +182,8 @@ if ($id > 0) {
 		$metricLabels = array('retail' => 'LmdbPropalPVRetailPrice', 'feed_in' => 'LmdbPropalPVFeedInPrice', 'premium' => 'LmdbPropalPVPremiumPerKwp');
 		$optionLabels = array('base' => 'LmdbPropalPVBase', 'peak' => 'LmdbPropalPVPeakHours', 'surplus' => 'LmdbPropalPVSurplus');
 		while (is_object($rule = $db->fetch_object($resqlRules))) {
-			$subscription = $rule->subscription_kva !== null ? price((float) $rule->subscription_kva, 0, $langs, 0, 0, -1).' kVA' : '—';
-			$peakRange = ($rule->min_kwp !== null ? price((float) $rule->min_kwp, 0, $langs, 0, 0, -1) : '−∞').' – '.($rule->max_kwp !== null ? price((float) $rule->max_kwp, 0, $langs, 0, 0, -1) : '+∞').' kWc';
+			$subscription = $rule->subscription_kva !== null ? price(price2num((float) $rule->subscription_kva, 'MT'), 0, $langs, 0, 0, -1).' kVA' : '—';
+			$peakRange = ($rule->min_kwp !== null ? price(price2num((float) $rule->min_kwp, 'MT'), 0, $langs, 0, 0, -1) : '−∞').' – '.($rule->max_kwp !== null ? price(price2num((float) $rule->max_kwp, 'MT'), 0, $langs, 0, 0, -1) : '+∞').' kWc';
 			$metric = isset($metricLabels[$rule->metric]) ? $langs->trans($metricLabels[$rule->metric]) : (string) $rule->metric;
 			$option = isset($optionLabels[$rule->option_code]) ? $langs->trans($optionLabels[$rule->option_code]) : (string) $rule->option_code;
 			print '<tr class="oddeven"><td>'.dol_escape_htmltag($metric).'</td><td>'.dol_escape_htmltag($option).'</td><td>'.$subscription.'</td><td>'.$peakRange.'</td><td class="right">'.price((float) $rule->value, 0, $langs, 0, 0, -1).' '.dol_escape_htmltag($rule->unit).'</td></tr>';
@@ -207,7 +207,7 @@ print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropal
 print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('DateStart').'</td><td>'.$form->selectDate('', 'date_start', 0, 0, 0, '', 1).'</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans('DateEnd').'</td><td>'.$form->selectDate('', 'date_end', 0, 0, 1, '', 1).'</td></tr>';
 print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('Currency').'</td><td>'.$form->selectCurrency($formCurrency, 'currency_code').'</td></tr>';
-print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropalPVSubscribedPower').' '.img_help(1, $langs->trans('LmdbPropalPVSubscribedPowerHelp')).'</td><td>'.$form->selectarray('subscription_kva', lmdbpropalpvGetSubscribedPowerOptions(), GETPOST('subscription_kva', 'alphanohtml') ?: '6', 0, 0, 0, '', 0, 0, 0, '', 'minwidth150').'</td></tr>';
+print '<tr class="oddeven"><td class="fieldrequired">'.$form->textwithpicto($langs->trans('LmdbPropalPVSubscribedPower'), $langs->trans('LmdbPropalPVSubscribedPowerHelp'), 1, 'help').'</td><td>'.$form->selectarray('subscription_kva', lmdbpropalpvGetSubscribedPowerOptions(), GETPOST('subscription_kva', 'alphanohtml') ?: '6', 0, 0, 0, '', 0, 0, 0, '', 'minwidth150').'</td></tr>';
 print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropalPVBase').'</td><td><input class="flat maxwidth100" inputmode="decimal" name="retail_base" value="'.dol_escape_htmltag(GETPOST('retail_base', 'alphanohtml')).'"> '.dol_escape_htmltag($formCurrency).'/kWh</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVPeakHours').'</td><td><input class="flat maxwidth100" inputmode="decimal" name="retail_peak" value="'.dol_escape_htmltag(GETPOST('retail_peak', 'alphanohtml')).'"> '.dol_escape_htmltag($formCurrency).'/kWh</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVFeedInPrice').'</td><td><input class="flat maxwidth100" inputmode="decimal" name="feed_in" value="'.dol_escape_htmltag(GETPOST('feed_in', 'alphanohtml')).'"> '.dol_escape_htmltag($formCurrency).'/kWh</td></tr>';

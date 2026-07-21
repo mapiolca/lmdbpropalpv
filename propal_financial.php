@@ -46,6 +46,7 @@ if (in_array($action, array('save', 'reload_tariff', 'reload_panels'), true)) {
 		'reference_date' => $referenceDate,
 		'retail_mode' => GETPOST('retail_mode', 'alpha'),
 		'subscription_kva' => (float) price2num(GETPOST('subscription_kva', 'alphanohtml')),
+		'connection_phase_mode' => GETPOST('connection_phase_mode', 'alpha'),
 		'retail_price_per_kwh' => (float) price2num(GETPOST('retail_price_per_kwh', 'alphanohtml'), 'MU'),
 		'feed_in_price_per_kwh' => (float) price2num(GETPOST('feed_in_price_per_kwh', 'alphanohtml'), 'MU'),
 		'premium_per_kwp' => (float) price2num(GETPOST('premium_per_kwp', 'alphanohtml'), 'MU'),
@@ -53,6 +54,9 @@ if (in_array($action, array('save', 'reload_tariff', 'reload_panels'), true)) {
 	);
 	if (!in_array($values['retail_mode'], array('base', 'peak', 'manual'), true)) {
 		$values['retail_mode'] = 'base';
+	}
+	if (!in_array($values['connection_phase_mode'], array('single', 'three'), true)) {
+		$values['connection_phase_mode'] = (string) $study['values']['connection_phase_mode'];
 	}
 
 	if ($action === 'reload_tariff') {
@@ -123,7 +127,7 @@ if ((float) $displayValues['retail_price_per_kwh'] <= 0.0 || ((float) $displayVa
 }
 
 $form = new Form($db);
-llxHeader('', $langs->trans('FinancialStudyPV'));
+llxHeader('', $object->ref.' - '.$langs->trans('FinancialStudyPV'));
 $head = propal_prepare_head($object);
 print dol_get_fiche_head($head, 'lmdbpropalpv', $langs->trans('Proposal'), -1, 'propal');
 $linkback = '<a href="'.DOL_URL_ROOT.'/comm/propal/list.php?restore_lastsearch_values=1">'.$langs->trans('BackToList').'</a>';
@@ -152,7 +156,7 @@ $morehtmlref .= '</div>';
 dol_banner_tab($object, 'ref', $linkback, 1, 'ref', 'ref', $morehtmlref);
 
 print '<div class="fichecenter"><div class="fichehalfleft"><table class="border centpercent">';
-print '<tr><td class="titlefield">'.$langs->trans('LmdbPropalPVPeakPower').'</td><td><strong>'.price($study['peak_power_kwp']).' kWc</strong></td></tr>';
+print '<tr><td class="titlefield">'.$langs->trans('LmdbPropalPVPeakPower').'</td><td><strong>'.price(price2num($study['peak_power_kwp'], 'MT')).' kWc</strong></td></tr>';
 print '<tr><td>'.$langs->trans('LmdbPropalPVProposalAmount').'</td><td><strong>'.price(price2num($study['investment_ttc'], 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']).'</strong></td></tr>';
 print '</table></div><div class="fichehalfright"><table class="border centpercent">';
 print '<tr><td class="titlefield">'.$langs->trans('Status').'</td><td>';
@@ -182,11 +186,11 @@ print '<input type="hidden" name="token" value="'.newToken().'">';
 print '<input type="hidden" name="tariff_set_id" value="'.((int) $displayValues['tariff_set_id']).'">';
 print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVDefaultAssumptions').'</th></tr>';
-lmdbpropalpvInputRow('annual_production_kwh', 'LmdbPropalPVAnnualProduction', $displayValues['annual_production_kwh'], ' kWh', $editable, 'LmdbPropalPVAnnualProductionHelp');
-lmdbpropalpvInputRow('self_consumption_pct', 'LmdbPropalPVSelfConsumption', $displayValues['self_consumption_pct'], ' %', $editable, '', 'MT');
-lmdbpropalpvInputRow('first_year_degradation_pct', 'LmdbPropalPVFirstYearDegradation', $displayValues['first_year_degradation_pct'], ' %', $editable, 'LmdbPropalPVFirstYearDegradationHelp', 'MT');
-lmdbpropalpvInputRow('panel_degradation_pct', 'LmdbPropalPVPanelDegradation', $displayValues['panel_degradation_pct'], ' %', $editable, 'LmdbPropalPVPanelDegradationHelp', 'MT');
-lmdbpropalpvInputRow('electricity_growth_pct', 'LmdbPropalPVElectricityGrowth', $displayValues['electricity_growth_pct'], ' %', $editable, '', 'MT');
+lmdbpropalpvInputRow($form, 'annual_production_kwh', 'LmdbPropalPVAnnualProduction', $displayValues['annual_production_kwh'], ' kWh', $editable, 'LmdbPropalPVAnnualProductionHelp');
+lmdbpropalpvInputRow($form, 'self_consumption_pct', 'LmdbPropalPVSelfConsumption', $displayValues['self_consumption_pct'], ' %', $editable, '', 'MT');
+lmdbpropalpvInputRow($form, 'first_year_degradation_pct', 'LmdbPropalPVFirstYearDegradation', $displayValues['first_year_degradation_pct'], ' %', $editable, 'LmdbPropalPVFirstYearDegradationHelp', 'MT');
+lmdbpropalpvInputRow($form, 'panel_degradation_pct', 'LmdbPropalPVPanelDegradation', $displayValues['panel_degradation_pct'], ' %', $editable, 'LmdbPropalPVPanelDegradationHelp', 'MT');
+lmdbpropalpvInputRow($form, 'electricity_growth_pct', 'LmdbPropalPVElectricityGrowth', $displayValues['electricity_growth_pct'], ' %', $editable, '', 'MT');
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVTariffReferenceDate').'</td><td>';
 $dateTimestamp = dol_stringtotime((string) $displayValues['reference_date']);
 print $form->selectDate($dateTimestamp, 'tariff_reference_date', 0, 0, 0, '', 1, 0, $editable ? 0 : 1);
@@ -199,17 +203,57 @@ if ($editable) {
 	print dol_escape_htmltag($langs->trans($modeLabel));
 }
 print '</td></tr>';
-print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVSubscribedPower').' '.img_help(1, $langs->trans('LmdbPropalPVSubscribedPowerHelp')).'</td><td>';
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVSubscribedPower'), $langs->trans('LmdbPropalPVSubscribedPowerHelp'), 1, 'help').'</td><td>';
 if ($editable) {
 	print $form->selectarray('subscription_kva', lmdbpropalpvGetSubscribedPowerOptions(), (string) $displayValues['subscription_kva'], 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
 } else {
-	print price($displayValues['subscription_kva']).' kVA';
+	print price(price2num((float) $displayValues['subscription_kva'], 'MT')).' kVA';
 }
 print '</td></tr>';
-lmdbpropalpvInputRow('retail_price_per_kwh', 'LmdbPropalPVRetailPrice', $displayValues['retail_price_per_kwh'], ' '.$study['currency_code'].'/kWh', $editable, '', 'MU');
-lmdbpropalpvInputRow('feed_in_price_per_kwh', 'LmdbPropalPVFeedInPrice', $displayValues['feed_in_price_per_kwh'], ' '.$study['currency_code'].'/kWh', $editable, '', 'MU');
-lmdbpropalpvInputRow('premium_per_kwp', 'LmdbPropalPVPremiumPerKwp', $displayValues['premium_per_kwp'], ' '.$study['currency_code'].'/kWc', $editable, '', 'MU');
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVConnectionPhaseMode'), $langs->trans('LmdbPropalPVConnectionPhaseModeHelp'), 1, 'help').'</td><td>';
+$phaseLabels = array('single' => $langs->trans('LmdbPropalPVSinglePhase'), 'three' => $langs->trans('LmdbPropalPVThreePhase'));
+if ($editable) {
+	print $form->selectarray('connection_phase_mode', $phaseLabels, (string) $displayValues['connection_phase_mode'], 0, 0, 0, '', 0, 0, 0, '', 'minwidth200');
+} else {
+	print dol_escape_htmltag($phaseLabels[(string) $displayValues['connection_phase_mode']] ?? (string) $displayValues['connection_phase_mode']);
+}
+print '</td></tr>';
+lmdbpropalpvInputRow($form, 'retail_price_per_kwh', 'LmdbPropalPVRetailPrice', $displayValues['retail_price_per_kwh'], ' '.$study['currency_code'].'/kWh', $editable, '', 'MU');
+lmdbpropalpvInputRow($form, 'feed_in_price_per_kwh', 'LmdbPropalPVFeedInPrice', $displayValues['feed_in_price_per_kwh'], ' '.$study['currency_code'].'/kWh', $editable, '', 'MU');
+lmdbpropalpvInputRow($form, 'premium_per_kwp', 'LmdbPropalPVPremiumPerKwp', $displayValues['premium_per_kwp'], ' '.$study['currency_code'].'/kWc', $editable, '', 'MU');
 print '</table>';
+
+$connection = $study['connection_result'];
+if ($connection instanceof LmdbPropalPVConnectionPowerResult) {
+	$statusTranslation = array(
+		LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT => 'LmdbPropalPVConnectionStatusCompliant',
+		LmdbPropalPVConnectionPowerResult::STATUS_INCREASE_TO_CHECK => 'LmdbPropalPVConnectionStatusIncreaseToCheck',
+		LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE => 'LmdbPropalPVConnectionStatusPhaseIncompatible',
+		LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE => 'LmdbPropalPVConnectionStatusIncomplete',
+	);
+	$statusClass = $connection->status === LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT ? 'badge-status4' : ($connection->status === LmdbPropalPVConnectionPowerResult::STATUS_INCREASE_TO_CHECK ? 'badge-status3' : 'badge-status8');
+	$inverterPowerLabel = $connection->inverterNominalPowerKva === null
+		? $langs->trans('LmdbPropalPVUnavailable')
+		: price(price2num($connection->inverterNominalPowerKva, 'MT')).' kVA'.(!$connection->inverterDataComplete ? ' ('.$langs->trans('LmdbPropalPVPartialValue').')' : '');
+	$recommendedLabel = $connection->recommendedSubscribedPowerKva === null
+		? $langs->trans('LmdbPropalPVSpecificConnectionStudy')
+		: price(price2num($connection->recommendedSubscribedPowerKva, 'MT')).' kVA';
+	print '<br><table class="noborder centpercent">';
+	print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVConnectionPowerCheck').'</th></tr>';
+	print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPeakPower').'</td><td>'.price(price2num($connection->peakPowerKwp, 'MT')).' kWc</td></tr>';
+	print '<tr class="oddeven"><td>'.$form->textwithpicto($langs->trans('LmdbPropalPVInverterNominalPower'), $langs->trans('LmdbPropalPVInverterNominalPowerHelp'), 1, 'help').'</td><td>'.dol_escape_htmltag($inverterPowerLabel).'</td></tr>';
+	print '<tr class="oddeven"><td>'.$form->textwithpicto($langs->trans('LmdbPropalPVConnectionReferencePower'), $langs->trans('LmdbPropalPVConnectionReferencePowerHelp'), 1, 'help').'</td><td><strong>'.price(price2num($connection->referencePowerKva, 'MT')).' kVA</strong></td></tr>';
+	print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVRecommendedSubscribedPower').'</td><td>'.dol_escape_htmltag($recommendedLabel).'</td></tr>';
+	print '<tr class="oddeven"><td>'.$langs->trans('Status').'</td><td><span class="badge '.$statusClass.'">'.dol_escape_htmltag($langs->trans($statusTranslation[$connection->status] ?? 'LmdbPropalPVConnectionStatusIncomplete')).'</span></td></tr>';
+	print '</table>';
+	foreach ($study['connection_warning_keys'] as $warningKey) {
+		$references = implode(', ', $study['connection_product_refs']);
+		$warning = $references !== '' && in_array($warningKey, array('LmdbPropalPVConnectionInverterDataUnavailable'), true)
+			? $langs->trans($warningKey, $references)
+			: $langs->trans($warningKey);
+		print '<div class="warning">'.dol_escape_htmltag($warning).'</div>';
+	}
+}
 if ($editable) {
 	print '<div class="center"><button class="button button-save" type="submit" name="action" value="save">'.$langs->trans('Save').'</button> ';
 	print '<button class="button" type="submit" name="action" value="reload_panels">'.$langs->trans('LmdbPropalPVReloadPanelCharacteristics').'</button> ';
@@ -276,6 +320,7 @@ function lmdbpropalpvAssignProposalOptions($object, array $values)
 		'reference_date' => 'lmdbpropalpv_tariff_reference_date',
 		'retail_mode' => 'lmdbpropalpv_retail_tariff_mode',
 		'subscription_kva' => 'lmdbpropalpv_retail_subscription_kva',
+		'connection_phase_mode' => 'lmdbpropalpv_connection_phase_mode',
 		'retail_price_per_kwh' => 'lmdbpropalpv_retail_price_per_kwh',
 		'feed_in_price_per_kwh' => 'lmdbpropalpv_feed_in_price_per_kwh',
 		'premium_per_kwp' => 'lmdbpropalpv_premium_per_kwp',
@@ -287,14 +332,11 @@ function lmdbpropalpvAssignProposalOptions($object, array $values)
 }
 
 /** @return void */
-function lmdbpropalpvInputRow($name, $label, $value, $suffix, $editable, $help = '', $priceType = '')
+function lmdbpropalpvInputRow(Form $form, $name, $label, $value, $suffix, $editable, $help = '', $priceType = '')
 {
 	global $langs;
-	print '<tr class="oddeven"><td class="titlefield">'.$langs->trans($label);
-	if ($help !== '') {
-		print ' '.img_help(1, $langs->trans($help));
-	}
-	print '</td><td>';
+	$translatedLabel = $langs->trans($label);
+	print '<tr class="oddeven"><td class="titlefield">'.($help !== '' ? $form->textwithpicto($translatedLabel, $langs->trans($help), 1, 'help') : $translatedLabel).'</td><td>';
 	if ($editable) {
 		print '<input class="flat maxwidth150" inputmode="decimal" name="'.dol_escape_htmltag($name).'" value="'.dol_escape_htmltag((string) $value).'">';
 	} else {
