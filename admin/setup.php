@@ -49,7 +49,7 @@ if ($action === 'save') {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidTariffMode'), null, 'errors');
 		$error++;
 	}
-	if ($subscription <= 0.0) {
+	if (!lmdbpropalpvSubscribedPowerIsSupported($subscription)) {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidSubscription'), null, 'errors');
 		$error++;
 	}
@@ -94,8 +94,8 @@ lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'LmdbP
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVRetailTariffMode').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', array('base' => $langs->trans('LmdbPropalPVBase'), 'peak' => $langs->trans('LmdbPropalPVPeakHours'), 'manual' => $langs->trans('LmdbPropalPVManual')), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'base'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth200');
 print '</td></tr>';
-print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVSubscribedPower').'</td><td>';
-print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', array(3 => '3 kVA', 6 => '6 kVA', 9 => '9 kVA', 12 => '12 kVA', 15 => '15 kVA', 18 => '18 kVA', 24 => '24 kVA', 30 => '30 kVA', 36 => '36 kVA'), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVSubscribedPower').' '.img_help(1, $langs->trans('LmdbPropalPVSubscribedPowerHelp')).'</td><td>';
+print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', lmdbpropalpvGetSubscribedPowerOptions(), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
 print '</td></tr>';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVPdfAppearance').'</th></tr>';
 lmdbpropalpvSetupTextRow('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LmdbPropalPVPdfPrimaryColor', '#16324F', 'maxwidth100');

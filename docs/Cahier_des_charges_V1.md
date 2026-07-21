@@ -35,7 +35,7 @@ Les hypothèses saisies sont :
 - augmentation annuelle du prix de l’électricité ;
 - date de référence tarifaire ;
 - profil Base, Heures pleines ou Manuel ;
-- puissance souscrite ;
+- puissance souscrite, avec les puissances usuelles du Tarif Bleu et toutes les puissances entières du Tarif Jaune de 37 à 250 kVA ;
 - prix de l’électricité ;
 - tarif de vente du surplus ;
 - prime par kWc.
@@ -78,7 +78,7 @@ rendement_annuel = gain_annuel / investissement
 
 Résultats : production totale, économies, ventes, prime, gains bruts, gain net, ROI à 20 ans, rendement annuel moyen, retour interpolé et coût de production simplifié.
 
-Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les prix unitaires sont normalisés avec `price2num(..., 'MU')`. Les montants, durées et pourcentages présentés sont normalisés avec `price2num(..., 'MT')` et affichés avec `price()` afin de suivre notamment le réglage « Nombre de décimales maximum pour les prix totaux ». Cette normalisation reste limitée à l’affichage et ne réduit pas la précision interne du moteur financier.
+Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les champs tarifaires unitaires sont normalisés avec `price2num(..., 'MU')`. Dans les résultats de projection, toutes les valeurs présentées sont normalisées avec `price2num(..., 'MT')`, sauf la colonne « Prix réseau » qui conserve `price2num(..., 'MU')`. L’affichage passe par `price()` afin de suivre les réglages Dolibarr. Cette normalisation reste limitée à l’affichage et ne réduit pas la précision interne du moteur financier.
 
 Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 % en première année, 0,45 % à partir de l’année 2, 3 %, 0,04 €/kWh, 0,2146 €/kWh, 80 €/kWc et 1 884,7575 € TTC. Le résultat attendu est un gain brut de 13 956,216903 €, un gain net de 12 071,459403 €, un retour de 2,944947 ans et un coût simplifié de 0,024941238 €/kWh.
 
@@ -101,6 +101,8 @@ Les hypothèses sont stockées dans 12 extrafields `propal`, invisibles sur la f
 
 Les barèmes utilisent deux tables normalisées. Le parent porte l’entité, la période, la devise, la source, l’empreinte, le statut et l’audit. Les règles portent la métrique, l’option, la puissance souscrite, les bornes de kWc, la valeur et l’unité. Une règle hérite de l’entité par la jointure obligatoire au parent.
 
+Les puissances du Tarif Jaune sont proposées par pas de 1 kVA, conformément à la gamme autorisée de 37 à 250 kVA. L’administrateur peut créer un barème personnalisé pour chacune de ces puissances. En l’absence de règle correspondant exactement à la date, à la devise, au profil et à la puissance, aucun prix n’est extrapolé et l’étude signale l’absence de barème. La V1 ne transforme pas les grilles horosaisonnières Jaunes en un prix moyen arbitraire.
+
 Un barème utilisé est archivé, pas supprimé. Aucune cascade SQL ne pilote une règle métier.
 
 ## 6. Historique tarifaire
@@ -110,6 +112,8 @@ L’historique embarqué couvre toutes les périodes disponibles depuis 2021 jus
 - S21 : tarif de vente du surplus et prime par tranche de puissance ;
 - TRVE Base : composante énergie TTC selon la puissance souscrite ;
 - TRVE Heures pleines : composante énergie TTC selon la puissance souscrite.
+
+L’historique TRVE résidentiel embarqué reste limité aux barèmes officiels documentés jusqu’à 36 kVA. Le support des puissances Jaunes permet la saisie et la résolution de barèmes administrateur dédiés, sans prétendre fournir un historique Jaune simplifié incompatible avec les périodes horosaisonnières officielles.
 
 La plage S21 distingue correctement `0–9 kWc` et `9–100 kWc`, ainsi que les quatre tranches de prime. Depuis le 5 juin 2026, le fichier CRE indique 0 € de prime et 0,011 €/kWh pour les deux tranches de surplus ; ces valeurs nulles sont légitimes.
 

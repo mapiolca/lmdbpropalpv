@@ -23,7 +23,7 @@ $rows = array(
 	array($langs->trans('Description'), $langs->trans('LmdbPropalPVAboutDescription')),
 	array($langs->trans('Compatibility'), 'Dolibarr 20+ / PHP 8.0+ / MySQL-MariaDB'),
 	array($langs->trans('LmdbPropalPVDependencies'), 'Propositions commerciales, PowerPlantPV 1.3.0+'),
-	array($langs->trans('LmdbPropalPVMainFeatures'), $langs->trans('FinancialStudyPV').', '.$langs->trans('LmdbPropalPVFeaturePanelDegradation').', '.$langs->trans('LmdbPropalPVModelWithPictures').', '.$langs->trans('LmdbPropalPVModelWithoutPictures')),
+	array($langs->trans('LmdbPropalPVMainFeatures'), $langs->trans('FinancialStudyPV').', '.$langs->trans('LmdbPropalPVFeaturePanelDegradation').', '.$langs->trans('LmdbPropalPVFeatureYellowTariffPowers').', '.$langs->trans('LmdbPropalPVModelWithPictures').', '.$langs->trans('LmdbPropalPVModelWithoutPictures')),
 	array($langs->trans('LmdbPropalPVLicense'), $langs->trans('LmdbPropalPVLicenseValue')),
 );
 foreach ($rows as $row) {

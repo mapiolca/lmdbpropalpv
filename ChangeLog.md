@@ -6,6 +6,8 @@
 - Moteur pur sans arrondi intermédiaire, temps de retour interpolé, ROI, rendement moyen et coût simplifié.
 - Dégradations distinctes en première année et à partir de l’année 2, proposées depuis les modules PowerPlantPV par moyenne pondérée sur la puissance et enregistrées comme snapshots rechargeables.
 - Montants, durées et pourcentages normalisés selon les décimales totales Dolibarr, avec graphiques enrichis des graduations et repères d’amortissement.
+- Projection annuelle normalisée selon les décimales totales, à l’exception de la colonne « Prix réseau » qui conserve la précision des prix unitaires.
+- Puissances souscrites du Tarif Jaune prises en charge de 37 à 250 kVA, par pas de 1 kVA, dans les réglages, les études et les barèmes personnalisés.
 - États complet, incomplet et consultatif affichés avec les badges natifs Dolibarr.
 - Historique officiel embarqué des tarifs S21 et TRVE depuis 2021, avec sources et empreintes SHA-256.
 - Onglet natif sur les propositions commerciales, snapshots tarifaires et rechargement explicite.

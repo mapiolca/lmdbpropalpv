@@ -17,5 +17,9 @@ Sources :
 - <https://www.cre.fr/documents/open-data/arretes-tarifaires-photovoltaiques-en-metropole.html>
 - <https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000044173104>
 - <https://www.data.gouv.fr/datasets/historique-des-tarifs-reglementes-de-vente-delectricite-pour-les-consommateurs-residentiels>
+- <https://www.legifrance.gouv.fr/jorf/id/JORFTEXT000051993896> — gamme fonctionnelle du Tarif Jaune : multiples de 1 kVA à partir de 37 kVA ;
+- <https://www.edf.fr/collectivites/offres-electricite-et-gaz/electricite/tarifs-reglementes/tarif-jaune> — plafond de 250 kVA.
+
+Les deux dernières références définissent les puissances proposées par l’interface. Elles ne constituent pas un historique simplifié des prix Jaunes embarqué : les grilles Jaunes sont horosaisonnières et ne sont pas réduites silencieusement à un prix unique par le module.
 
 La période mai–juillet 2022 possède deux cas officiels S21. Les deux sont conservés. Le résolveur choisit le dernier barème officiel inséré, donc le cas B, tout en laissant le cas A visible et duplicable dans l’administration.

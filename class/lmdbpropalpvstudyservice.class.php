@@ -88,7 +88,7 @@ class LmdbPropalPVStudyService
 		if (!in_array((string) $values['retail_mode'], array('base', 'peak', 'manual'), true)) {
 			$missing[] = 'LmdbPropalPVInvalidTariffMode';
 		}
-		if ((string) $values['retail_mode'] !== 'manual' && (float) $values['subscription_kva'] <= 0.0) {
+		if ((string) $values['retail_mode'] !== 'manual' && !lmdbpropalpvSubscribedPowerIsSupported((float) $values['subscription_kva'])) {
 			$missing[] = 'LmdbPropalPVInvalidSubscription';
 		}
 		if ((float) $values['retail_price_per_kwh'] <= 0.0) {

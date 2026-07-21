@@ -20,13 +20,15 @@
 | TRVE initial | dates des 1er et 31 janvier 2021 | barème applicable issu de la période source août 2020–janvier 2021 |
 | TRVE | Base 3/6/9/12/15 kVA | composante TTC correcte pour la date |
 | TRVE | Heures pleines 6 à 36 kVA | composante HP TTC correcte pour la date |
+| Tarif Jaune | sélectionner 37, 42, 100 et 250 kVA dans les réglages, l’étude et un barème personnalisé | chaque puissance est proposée et enregistrée ; 36,5 et 251 kVA sont refusés |
+| Tarif Jaune | recharger un barème personnalisé correspondant exactement à la date, la devise, le profil et la puissance | prix réseau rechargé ; aucune extrapolation depuis une autre puissance |
 | Devise | devis dans une devise sans barème | étude incomplète, message explicite |
 | PDF illustré | aucune, quelques et toutes les photos produits | colonne propre, aucun emplacement cassé |
 | PDF épuré | produits avec photos | aucune colonne image |
 | PDF | lignes et notes longues, plusieurs pages | pas de chevauchement avec le pied |
 | Graphiques | étude avec amortissement atteint | ligne horizontale jusqu’au point zéro et verticale jusqu’à l’axe des années dans l’onglet et le PDF |
 | Graphique PDF | valeurs négatives et positives sur 20 ans | graduations de trésorerie et d’années lisibles, courbe non tronquée |
-| Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | tous les montants, durées et pourcentages de l’onglet et des PDF suivent le réglage ; les prix unitaires suivent la précision unitaire |
+| Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | toutes les données de la projection suivent la précision totale dans l’onglet et les PDF, sauf « Prix réseau » qui suit la précision unitaire |
 | Signature | devis validé avec signature en ligne active | URL native et QR code |
 | Signature | signature désactivée | bloc Bon pour accord |
 | Multicompany | deux entités avec couleurs et devis distincts | réglages et documents isolés |

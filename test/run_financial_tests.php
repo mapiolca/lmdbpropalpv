@@ -4,6 +4,7 @@
 require_once dirname(__DIR__).'/class/lmdbpropalpvfinancialcalculator.class.php';
 require_once dirname(__DIR__).'/class/lmdbpropalpvtariffmatcher.class.php';
 require_once dirname(__DIR__).'/class/lmdbpropalpvpaneldegradationresolver.class.php';
+require_once dirname(__DIR__).'/lib/lmdbpropalpv.lib.php';
 
 /** @throws RuntimeException */
 function assertNear(float $actual, float $expected, float $tolerance, string $label): void
@@ -14,6 +15,20 @@ function assertNear(float $actual, float $expected, float $tolerance, string $la
 }
 
 $calculator = new LmdbPropalPVFinancialCalculator();
+$subscribedPowerOptions = lmdbpropalpvGetSubscribedPowerOptions();
+if (count($subscribedPowerOptions) !== 223 || !isset($subscribedPowerOptions[36], $subscribedPowerOptions[37], $subscribedPowerOptions[250]) || isset($subscribedPowerOptions[251])) {
+	throw new RuntimeException('Subscribed power options must include Blue powers and every Yellow power from 37 to 250 kVA.');
+}
+foreach (array(3.0, 36.0, 37.0, 42.0, 250.0) as $supportedPower) {
+	if (!lmdbpropalpvSubscribedPowerIsSupported($supportedPower)) {
+		throw new RuntimeException('Supported subscribed power rejected: '.((string) $supportedPower).' kVA.');
+	}
+}
+foreach (array(0.0, 4.0, 36.5, 250.5, 251.0) as $unsupportedPower) {
+	if (lmdbpropalpvSubscribedPowerIsSupported($unsupportedPower)) {
+		throw new RuntimeException('Unsupported subscribed power accepted: '.((string) $unsupportedPower).' kVA.');
+	}
+}
 $input = new LmdbPropalPVFinancialInput(1884.7575, 'EUR', 3.0, 3456.0, 0.68, 0.0045, 0.0045, 0.03, 0.2146, 0.04, 80.0);
 $result = $calculator->calculate($input);
 

@@ -532,7 +532,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$y += 9;
 		foreach ($result->years as $year) {
 			$x = $this->marge_gauche;
-				$values = array($year->year, price($year->productionKwh), price(price2num($year->retailPricePerKwh, 'MU')), price(price2num($year->surplusSale, 'MT')), price(price2num($year->electricitySavings, 'MT')), price(price2num($year->premium, 'MT')), price(price2num($year->annualGain, 'MT')), price(price2num($year->cumulativeCashflow, 'MT')), price(price2num($year->annualReturnRate * 100.0, 'MT'), 0, $outputlangs).' %');
+			$values = array($year->year, price(price2num($year->productionKwh, 'MT'), 0, $outputlangs), price(price2num($year->retailPricePerKwh, 'MU'), 0, $outputlangs), price(price2num($year->surplusSale, 'MT'), 0, $outputlangs), price(price2num($year->electricitySavings, 'MT'), 0, $outputlangs), price(price2num($year->premium, 'MT'), 0, $outputlangs), price(price2num($year->annualGain, 'MT'), 0, $outputlangs), price(price2num($year->cumulativeCashflow, 'MT'), 0, $outputlangs), price(price2num($year->annualReturnRate * 100.0, 'MT'), 0, $outputlangs).' %');
 			foreach ($values as $index => $value) {
 				$pdf->SetXY($x, $y);
 				$pdf->Cell($widths[$index], 5.2, (string) $value, 1, 0, $index === 0 ? 'C' : 'R', false, '', 1);

@@ -21,6 +21,49 @@ function lmdbpropalpvAdminPrepareHead()
 }
 
 /**
+ * Return the supported subscribed powers for French Blue and Yellow tariffs.
+ *
+ * Yellow tariff powers are integer multiples of 1 kVA from 37 to 250 kVA.
+ *
+ * @return array<int,string>
+ */
+function lmdbpropalpvGetSubscribedPowerOptions()
+{
+	$options = array(
+		3 => '3 kVA',
+		6 => '6 kVA',
+		9 => '9 kVA',
+		12 => '12 kVA',
+		15 => '15 kVA',
+		18 => '18 kVA',
+		24 => '24 kVA',
+		30 => '30 kVA',
+		36 => '36 kVA',
+	);
+	for ($powerKva = 37; $powerKva <= 250; $powerKva++) {
+		$options[$powerKva] = ((string) $powerKva).' kVA';
+	}
+
+	return $options;
+}
+
+/**
+ * Validate a subscribed power offered by the module.
+ *
+ * @param float $powerKva Subscribed power
+ * @return bool
+ */
+function lmdbpropalpvSubscribedPowerIsSupported($powerKva)
+{
+	$integerPower = (int) $powerKva;
+	if (abs($powerKva - (float) $integerPower) > 0.00000001) {
+		return false;
+	}
+
+	return array_key_exists($integerPower, lmdbpropalpvGetSubscribedPowerOptions());
+}
+
+/**
  * Return whether a user is an administrator for the current functional scope.
  *
  * This adds real elevation logic and is therefore intentionally not a wrapper

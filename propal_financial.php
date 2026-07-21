@@ -199,9 +199,9 @@ if ($editable) {
 	print dol_escape_htmltag($langs->trans($modeLabel));
 }
 print '</td></tr>';
-print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVSubscribedPower').'</td><td>';
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVSubscribedPower').' '.img_help(1, $langs->trans('LmdbPropalPVSubscribedPowerHelp')).'</td><td>';
 if ($editable) {
-	print $form->selectarray('subscription_kva', array(3 => '3 kVA', 6 => '6 kVA', 9 => '9 kVA', 12 => '12 kVA', 15 => '15 kVA', 18 => '18 kVA', 24 => '24 kVA', 30 => '30 kVA', 36 => '36 kVA'), (string) $displayValues['subscription_kva'], 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
+	print $form->selectarray('subscription_kva', lmdbpropalpvGetSubscribedPowerOptions(), (string) $displayValues['subscription_kva'], 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
 } else {
 	print price($displayValues['subscription_kva']).' kVA';
 }
@@ -222,7 +222,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 	print '<br>'.load_fiche_titre($langs->trans('LmdbPropalPVProjection20Years'), '', 'chart-area');
 	print '<div class="fichecenter"><div class="fichehalfleft"><table class="border centpercent">';
 	$metrics = array(
-		'LmdbPropalPVTotalProduction' => price($result->totalProductionKwh).' kWh',
+		'LmdbPropalPVTotalProduction' => price(price2num($result->totalProductionKwh, 'MT')).' kWh',
 		'LmdbPropalPVTotalSavings' => price(price2num($result->totalElectricitySavings, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']),
 		'LmdbPropalPVTotalSales' => price(price2num($result->totalSurplusSale, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']),
 		'LmdbPropalPVTotalPremium' => price(price2num($result->totalPremium, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']),
@@ -238,7 +238,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 		'LmdbPropalPVROI20' => price(price2num($result->roiRate * 100.0, 'MT')).' %',
 		'LmdbPropalPVAverageAnnualReturn' => price(price2num($result->averageAnnualReturnRate * 100.0, 'MT')).' %',
 		'LmdbPropalPVPayback' => $payback,
-		'LmdbPropalPVSimplifiedProductionCost' => price(price2num($result->simplifiedProductionCostPerKwh, 'MU')).' '.$study['currency_code'].'/kWh',
+		'LmdbPropalPVSimplifiedProductionCost' => price(price2num($result->simplifiedProductionCostPerKwh, 'MT')).' '.$study['currency_code'].'/kWh',
 	);
 	foreach ($metrics as $label => $value) {
 		print '<tr><td class="titlefield">'.$langs->trans($label).'</td><td><strong>'.$value.'</strong></td></tr>';
@@ -248,7 +248,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 	print '<div class="div-table-responsive"><table class="noborder centpercent">';
 	print '<tr class="liste_titre"><th>'.$langs->trans('LmdbPropalPVYear').'</th><th class="right">'.$langs->trans('LmdbPropalPVProduction').'</th><th class="right">'.$langs->trans('LmdbPropalPVNetworkPrice').'</th><th class="right">'.$langs->trans('LmdbPropalPVSurplusSale').'</th><th class="right">'.$langs->trans('LmdbPropalPVElectricitySavings').'</th><th class="right">'.$langs->trans('LmdbPropalPVPremium').'</th><th class="right">'.$langs->trans('LmdbPropalPVAnnualGain').'</th><th class="right">'.$langs->trans('LmdbPropalPVCumulativeCashflow').'</th><th class="right">'.$langs->trans('LmdbPropalPVAnnualReturn').'</th></tr>';
 	foreach ($result->years as $year) {
-		print '<tr class="oddeven"><td>'.((int) $year->year).'</td><td class="right">'.price($year->productionKwh).'</td><td class="right">'.price(price2num($year->retailPricePerKwh, 'MU')).'</td><td class="right">'.price(price2num($year->surplusSale, 'MT')).'</td><td class="right">'.price(price2num($year->electricitySavings, 'MT')).'</td><td class="right">'.price(price2num($year->premium, 'MT')).'</td><td class="right">'.price(price2num($year->annualGain, 'MT')).'</td><td class="right">'.price(price2num($year->cumulativeCashflow, 'MT')).'</td><td class="right">'.price(price2num($year->annualReturnRate * 100.0, 'MT')).' %</td></tr>';
+		print '<tr class="oddeven"><td>'.((int) $year->year).'</td><td class="right">'.price(price2num($year->productionKwh, 'MT')).'</td><td class="right">'.price(price2num($year->retailPricePerKwh, 'MU')).'</td><td class="right">'.price(price2num($year->surplusSale, 'MT')).'</td><td class="right">'.price(price2num($year->electricitySavings, 'MT')).'</td><td class="right">'.price(price2num($year->premium, 'MT')).'</td><td class="right">'.price(price2num($year->annualGain, 'MT')).'</td><td class="right">'.price(price2num($year->cumulativeCashflow, 'MT')).'</td><td class="right">'.price(price2num($year->annualReturnRate * 100.0, 'MT')).' %</td></tr>';
 	}
 	print '</table></div>';
 }

@@ -32,7 +32,7 @@ if ($action === 'create') {
 		array('premium', 'surplus', null, 0.0, 100.0, (float) price2num(GETPOST('premium', 'alphanohtml'), 'MU'), $currencyCode.'/kWp'),
 		);
 		$error = 0;
-		if ($ref === '' || $label === '' || !preg_match('/^[A-Z]{3}$/', $currencyCode) || $dateStart <= 0 || ($dateEnd > 0 && $dateEnd < $dateStart) || $subscriptionKva <= 0.0 || $rules[0][5] <= 0.0 || $rules[1][5] <= 0.0 || $rules[2][5] < 0.0 || $rules[3][5] < 0.0) {
+		if ($ref === '' || $label === '' || !preg_match('/^[A-Z]{3}$/', $currencyCode) || $dateStart <= 0 || ($dateEnd > 0 && $dateEnd < $dateStart) || !lmdbpropalpvSubscribedPowerIsSupported($subscriptionKva) || $rules[0][5] <= 0.0 || $rules[1][5] <= 0.0 || $rules[2][5] < 0.0 || $rules[3][5] < 0.0) {
 			$error++;
 			setEventMessages($langs->trans('LmdbPropalPVInvalidTariffInput'), null, 'errors');
 		}
@@ -207,7 +207,7 @@ print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropal
 print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('DateStart').'</td><td>'.$form->selectDate('', 'date_start', 0, 0, 0, '', 1).'</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans('DateEnd').'</td><td>'.$form->selectDate('', 'date_end', 0, 0, 1, '', 1).'</td></tr>';
 print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('Currency').'</td><td>'.$form->selectCurrency($formCurrency, 'currency_code').'</td></tr>';
-print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropalPVSubscribedPower').'</td><td>'.$form->selectarray('subscription_kva', array(3 => '3 kVA', 6 => '6 kVA', 9 => '9 kVA', 12 => '12 kVA', 15 => '15 kVA', 18 => '18 kVA', 24 => '24 kVA', 30 => '30 kVA', 36 => '36 kVA'), GETPOST('subscription_kva', 'alphanohtml') ?: '6', 0, 0, 0, '', 0, 0, 0, '', 'minwidth150').'</td></tr>';
+print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropalPVSubscribedPower').' '.img_help(1, $langs->trans('LmdbPropalPVSubscribedPowerHelp')).'</td><td>'.$form->selectarray('subscription_kva', lmdbpropalpvGetSubscribedPowerOptions(), GETPOST('subscription_kva', 'alphanohtml') ?: '6', 0, 0, 0, '', 0, 0, 0, '', 'minwidth150').'</td></tr>';
 print '<tr class="oddeven"><td class="fieldrequired">'.$langs->trans('LmdbPropalPVBase').'</td><td><input class="flat maxwidth100" inputmode="decimal" name="retail_base" value="'.dol_escape_htmltag(GETPOST('retail_base', 'alphanohtml')).'"> '.dol_escape_htmltag($formCurrency).'/kWh</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVPeakHours').'</td><td><input class="flat maxwidth100" inputmode="decimal" name="retail_peak" value="'.dol_escape_htmltag(GETPOST('retail_peak', 'alphanohtml')).'"> '.dol_escape_htmltag($formCurrency).'/kWh</td></tr>';
 print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVFeedInPrice').'</td><td><input class="flat maxwidth100" inputmode="decimal" name="feed_in" value="'.dol_escape_htmltag(GETPOST('feed_in', 'alphanohtml')).'"> '.dol_escape_htmltag($formCurrency).'/kWh</td></tr>';
