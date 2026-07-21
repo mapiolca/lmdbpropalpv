@@ -16,7 +16,7 @@ llxHeader('', $langs->trans('About'));
 print load_fiche_titre($langs->trans('LmdbPropalPVSetup'), lmdbpropalpvAdminLinkBack(), 'solar-panel');
 print dol_get_fiche_head(lmdbpropalpvAdminPrepareHead(), 'about', $langs->trans('LmdbPropalPVSetup'), -1, 'solar-panel');
 print '<table class="noborder centpercent">';
-print '<tr class="liste_titre"><th colspan="2">LmdbPropalPV</th></tr>';
+print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('ModuleLmdbPropalPVName').'</th></tr>';
 $rows = array(
 	array($langs->trans('Version'), '1.0.0'),
 	array($langs->trans('Author'), 'Pierre Ardoin <developpeur@lesmetiersdubatiment.fr>'),
