@@ -21,5 +21,5 @@
 - Couleurs PDF configurables avec le sélecteur de couleur natif Dolibarr, compatible avec les modes jPicker et HTML5.
 - Correction du chargement de la bibliothèque native des propositions commerciales sur Dolibarr v20+.
 - Sécurisation de la mesure et du rendu des pieds de page TCPDF afin d’éviter les pages vides de pied lors de la génération du supplément PDF.
-- Pagination PDF globale après composition, incluant le corps commercial, les pages PV et les annexes activées par les options natives de CGV et de fiches produits, sans page blanche provoquée par le marquage du pied.
+- Pagination PDF globale unique après composition : les compteurs des documents sources sont neutralisés pendant leur génération, puis le vrai numéro et le vrai total sont injectés sur le corps commercial, les pages PV et les annexes CGV ou fiches produits, sans page blanche ni double pagination.
 - Documentation fonctionnelle, paquet de prompts et matrice de tests manuels.

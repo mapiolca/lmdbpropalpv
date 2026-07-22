@@ -39,7 +39,7 @@
 | Modèles PDF | ouvrir l’administration native en français puis en anglais | noms traduits « PV Signature illustré/épuré » et équivalents anglais, identifiants techniques inchangés |
 | Métadonnées PDF | mettre à jour une installation contenant les anciennes lignes avec `description` renseignée | libellés traduits visibles, `description` vidée, aucun modèle désactivé ou réactivé et modèle par défaut inchangé |
 | Corps commercial configurable | sélectionner successivement Cyan puis un autre modèle PDF actif dans chaque entité | le corps commercial provient du modèle choisi et les pages PV sont assemblées autour de celui-ci |
-| Pagination PDF globale | générer un devis dont le corps commercial comporte plusieurs pages | exactement N pages, sans page blanche de pagination, et numérotation continue de `1 / N` à `N / N`, sans reprise du compteur du corps commercial ou du supplément PV |
+| Pagination PDF globale | générer un devis dont le corps commercial comporte plusieurs pages | exactement N pages, un seul compteur visible par page, sans page blanche, et numérotation continue de `1 / N` à `N / N` sur le supplément PV, le corps commercial et les annexes |
 | Annexes PDF | activer puis désactiver séparément l’intégration des CGV et des fiches produits du modèle commercial | seules les annexes configurées sont présentes et chaque page ajoutée est incluse dans le total de la pagination globale |
 | Corps commercial indisponible | désactiver après configuration le modèle commercial sélectionné puis générer | repli contrôlé sur Cyan, sans récursion ni erreur fatale |
 | Graphiques | étude avec amortissement atteint | ligne horizontale jusqu’au point zéro et verticale jusqu’à l’axe des années dans l’onglet et le PDF |

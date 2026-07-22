@@ -54,9 +54,11 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$conf->global->MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS = lmdbpropalpvGetEntityStringConstant($this->db, 'MAIN_GENERATE_DOCUMENTS_SHOW_FOOT_DETAILS', '0', (int) $object->entity);
 		$mysoc = $this->emetteur;
 		$result = 0;
+		$sourcePaginationState = $this->suppressSourcePagination();
 		try {
 			$result = $object->generateDocument($baseProposalModel, $outputlangs, $hidedetails, $hidedesc, $hideref);
 		} finally {
+			$this->restoreSourcePagination($sourcePaginationState);
 			$mysoc = $previousEmitter;
 			$object->model_pdf = $previousObjectModel;
 			if ($hadPictureSetting) {
@@ -95,12 +97,15 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$temporarySuffix = substr(dol_hash(uniqid((string) $object->id, true), 3), 0, 16);
 		$supplement = dirname($file).'/'.pathinfo($file, PATHINFO_FILENAME).'_lmdbpropalpv_'.$temporarySuffix.'_supplement.pdf';
 		$merged = dirname($file).'/'.pathinfo($file, PATHINFO_FILENAME).'_lmdbpropalpv_'.$temporarySuffix.'_merged.pdf';
+		$sourcePaginationState = $this->suppressSourcePagination();
 		try {
 			$supplementCreated = $this->createSupplement($object, $outputlangs, $study, $supplement);
 		} catch (Throwable $exception) {
 			$this->error = $outputlangs->transnoentities('LmdbPropalPVErrorPdfSupplement').': '.$exception->getMessage();
 			dol_syslog(__METHOD__.' '.$this->error, LOG_ERR);
 			$supplementCreated = false;
+		} finally {
+			$this->restoreSourcePagination($sourcePaginationState);
 		}
 		if (!$supplementCreated) {
 			dol_delete_file($supplement, 0, 1, 1, null, false, 0);
@@ -121,6 +126,43 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$this->result = array('fullpath' => $file);
 
 		return 1;
+	}
+
+	/**
+	 * Move the constituent PDF counter outside the page while its model renders.
+	 * The legal footer remains untouched and the final merge writes the only
+	 * visible counter with the total number of composed pages.
+	 *
+	 * @return array{had_value:bool,value:int|string|null}
+	 */
+	private function suppressSourcePagination()
+	{
+		global $conf;
+
+		$hadValue = isset($conf->global->PDF_FOOTER_PAGE_NUMBER_X);
+		$previousValue = $hadValue ? $conf->global->PDF_FOOTER_PAGE_NUMBER_X : null;
+		// A large negative offset keeps TCPDF's X coordinate positive and moves
+		// the source counter beyond the right edge without changing the footer Y.
+		$conf->global->PDF_FOOTER_PAGE_NUMBER_X = -1000;
+
+		return array('had_value' => $hadValue, 'value' => $previousValue);
+	}
+
+	/**
+	 * Restore the pagination offset after a constituent PDF has been generated.
+	 *
+	 * @param array{had_value:bool,value:int|string|null} $state Previous state
+	 * @return void
+	 */
+	private function restoreSourcePagination(array $state)
+	{
+		global $conf;
+
+		if ($state['had_value']) {
+			$conf->global->PDF_FOOTER_PAGE_NUMBER_X = $state['value'];
+		} else {
+			unset($conf->global->PDF_FOOTER_PAGE_NUMBER_X);
+		}
 	}
 
 	/**
