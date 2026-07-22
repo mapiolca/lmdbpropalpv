@@ -18,6 +18,7 @@
 - Onglet natif sur les propositions commerciales, snapshots tarifaires et rechargement explicite.
 - Modèles PDF « PV Signature illustré » et « PV Signature épuré », photos produits natives et signature en ligne par QR code.
 - Première activation conservatrice, réglages par entité, droits granulaires et compatibilité Multicompany.
+- Couleurs PDF configurables avec le sélecteur de couleur natif Dolibarr, compatible avec les modes jPicker et HTML5.
 - Correction du chargement de la bibliothèque native des propositions commerciales sur Dolibarr v20+.
 - Sécurisation de la mesure et du rendu des pieds de page TCPDF afin d’éviter les pages vides de pied lors de la génération du supplément PDF.
 - Pagination PDF globale après composition, incluant le corps commercial, les pages PV et les annexes activées par les options natives de CGV et de fiches produits, sans page blanche provoquée par le marquage du pied.

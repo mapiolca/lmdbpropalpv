@@ -4,6 +4,7 @@
 require '../../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
+require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
 
 $langs->loadLangs(array('admin', 'propal', 'lmdbpropalpv@lmdbpropalpv'));
@@ -20,6 +21,14 @@ if ($action === 'save') {
 	if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 		accessforbidden();
 	}
+	$primaryColor = strtoupper(GETPOST('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'alphanohtml'));
+	$accentColor = strtoupper(GETPOST('LMDBPROPALPV_PDF_ACCENT_COLOR', 'alphanohtml'));
+	if ($primaryColor !== '' && substr($primaryColor, 0, 1) !== '#') {
+		$primaryColor = '#'.$primaryColor;
+	}
+	if ($accentColor !== '' && substr($accentColor, 0, 1) !== '#') {
+		$accentColor = '#'.$accentColor;
+	}
 	$values = array(
 		'LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'alphanohtml'),
 		'LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'alphanohtml'),
@@ -27,8 +36,8 @@ if ($action === 'save') {
 		'LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'alphanohtml'),
 		'LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE' => GETPOST('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'alpha'),
 		'LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA' => GETPOST('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', 'alphanohtml'),
-		'LMDBPROPALPV_PDF_PRIMARY_COLOR' => strtoupper(GETPOST('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'alphanohtml')),
-		'LMDBPROPALPV_PDF_ACCENT_COLOR' => strtoupper(GETPOST('LMDBPROPALPV_PDF_ACCENT_COLOR', 'alphanohtml')),
+		'LMDBPROPALPV_PDF_PRIMARY_COLOR' => $primaryColor,
+		'LMDBPROPALPV_PDF_ACCENT_COLOR' => $accentColor,
 		'LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL' => GETPOST('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'aZ09'),
 		'LMDBPROPALPV_FINANCIAL_DISCLAIMER' => GETPOST('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'restricthtml'),
 	);
@@ -95,6 +104,7 @@ if ($action === 'save') {
 }
 
 $form = new Form($db);
+$formother = new FormOther($db);
 llxHeader('', $langs->trans('LmdbPropalPVSetup'));
 print load_fiche_titre($langs->trans('LmdbPropalPVSetup'), lmdbpropalpvAdminLinkBack(), 'solar-panel');
 print dol_get_fiche_head(lmdbpropalpvAdminPrepareHead(), 'settings', $langs->trans('LmdbPropalPVSetup'), -1, 'solar-panel');
@@ -124,8 +134,12 @@ if (!isset($baseProposalModelSelectOptions[$currentBaseProposalModel])) {
 print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVBaseProposalModel'), $langs->trans('LmdbPropalPVBaseProposalModelHelp'), 1, 'help').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', $baseProposalModelSelectOptions, $currentBaseProposalModel, 0, 0, 0, '', 0, 0, 0, '', 'minwidth300');
 print '</td></tr>';
-lmdbpropalpvSetupTextRow('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LmdbPropalPVPdfPrimaryColor', '#16324F', 'maxwidth100');
-lmdbpropalpvSetupTextRow('LMDBPROPALPV_PDF_ACCENT_COLOR', 'LmdbPropalPVPdfAccentColor', '#F2B705', 'maxwidth100');
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPdfPrimaryColor').'</td><td>';
+print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F'), 'LMDBPROPALPV_PDF_PRIMARY_COLOR', '', 1, array(), 'maxwidth100', '', '#16324F');
+print '</td></tr>';
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPdfAccentColor').'</td><td>';
+print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_PDF_ACCENT_COLOR', '#F2B705'), 'LMDBPROPALPV_PDF_ACCENT_COLOR', '', 1, array(), 'maxwidth100', '', '#F2B705');
+print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVFinancialDisclaimer').'</td><td><textarea class="flat centpercent" rows="3" name="LMDBPROPALPV_FINANCIAL_DISCLAIMER">'.dol_escape_htmltag(getDolGlobalString('LMDBPROPALPV_FINANCIAL_DISCLAIMER')).'</textarea></td></tr>';
 print '</table>';
 print '<div class="center"><input class="button button-save" type="submit" value="'.$langs->trans('Save').'"></div>';
@@ -158,11 +172,4 @@ function lmdbpropalpvSetupNumberRow($name, $label, $default, $suffix)
 {
 	global $langs;
 	print '<tr class="oddeven"><td class="titlefield">'.$langs->trans($label).'</td><td><input class="flat maxwidth100" inputmode="decimal" name="'.dol_escape_htmltag($name).'" value="'.dol_escape_htmltag(getDolGlobalString($name, $default)).'">'.$suffix.'</td></tr>';
-}
-
-/** @return void */
-function lmdbpropalpvSetupTextRow($name, $label, $default, $css)
-{
-	global $langs;
-	print '<tr class="oddeven"><td class="titlefield">'.$langs->trans($label).'</td><td><input class="flat '.dol_escape_htmltag($css).'" name="'.dol_escape_htmltag($name).'" value="'.dol_escape_htmltag(getDolGlobalString($name, $default)).'"></td></tr>';
 }

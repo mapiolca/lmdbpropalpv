@@ -144,7 +144,7 @@ Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv
 
 La variante illustrée active uniquement la mécanique native de photos produits. Elle ne crée aucun stockage parallèle. La variante épurée désactive la colonne image.
 
-La couverture affiche le logo de l’entité, le client, la référence, la date, le total TTC et les indicateurs PV. Deux couleurs sont configurables par entité : bleu nuit `#16324F` et solaire `#F2B705`.
+La couverture affiche le logo de l’entité, le client, la référence, la date, le total TTC et les indicateurs PV. Deux couleurs sont configurables par entité avec le sélecteur de couleur natif Dolibarr : bleu nuit `#16324F` et solaire `#F2B705`.
 
 Si `PROPOSAL_ALLOW_ONLINESIGN` est actif et le devis validé, l’URL est construite par `getOnlineSignatureUrl()` et encodée dans un QR code natif TCPDF. Sinon, une zone « Bon pour accord » est affichée.
 
