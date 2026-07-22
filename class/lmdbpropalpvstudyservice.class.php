@@ -8,7 +8,40 @@ require_once __DIR__.'/lmdbpropalpvinverterpowerresolver.class.php';
 require_once __DIR__.'/lmdbpropalpvconnectionpowerchecker.class.php';
 require_once dirname(__DIR__).'/lib/lmdbpropalpv.lib.php';
 
-/** Build one proposal study from its immutable commercial and optional data. */
+/**
+ * Build the proposal studies with and without a battery.
+ *
+ * @phpstan-type BatteryProposalSnapshot array{id:int,label:string,amount_ttc:float,ref:string,ref_client:string}
+ * @phpstan-type FinancialStudy array{
+ *     complete:bool,
+ *     missing:list<string>,
+ *     input:?LmdbPropalPVFinancialInput,
+ *     result:?LmdbPropalPVFinancialResult,
+ *     projection_years:int,
+ *     battery_configured:bool,
+ *     battery_complete:bool,
+ *     battery_missing:list<string>,
+ *     battery_input:?LmdbPropalPVFinancialInput,
+ *     battery_result:?LmdbPropalPVFinancialResult,
+ *     battery_extra_investment_ttc:?float,
+ *     battery_investment_ttc:float,
+ *     battery_proposal_id:int,
+ *     battery_proposal_source:?BatteryProposalSnapshot,
+ *     battery_warning_keys:list<string>,
+ *     peak_power_kwp:float,
+ *     investment_ttc:float,
+ *     currency_code:string,
+ *     reference_date:string,
+ *     values:array<string,mixed>,
+ *     degradation_warning_keys:list<string>,
+ *     degradation_fallback_product_refs:list<string>,
+ *     degradation_source:string,
+ *     connection_result:LmdbPropalPVConnectionPowerResult,
+ *     connection_warning_keys:list<string>,
+ *     connection_product_refs:list<string>,
+ *     connection_source:string
+ * }
+ */
 class LmdbPropalPVStudyService
 {
 	/** @var DoliDB */
@@ -22,7 +55,7 @@ class LmdbPropalPVStudyService
 
 	/**
 	 * @param Propal $propal Loaded proposal
-	 * @return array{complete:bool,missing:list<string>,input:?LmdbPropalPVFinancialInput,result:?LmdbPropalPVFinancialResult,peak_power_kwp:float,investment_ttc:float,currency_code:string,reference_date:string,values:array<string,mixed>,degradation_warning_keys:list<string>,degradation_fallback_product_refs:list<string>,degradation_source:string,connection_result:LmdbPropalPVConnectionPowerResult,connection_warning_keys:list<string>,connection_product_refs:list<string>,connection_source:string}
+	 * @return FinancialStudy
 	 */
 	public function buildStudy($propal)
 	{
@@ -37,6 +70,10 @@ class LmdbPropalPVStudyService
 		$investmentTtc = (float) price2num($investmentTtcRaw, 'MT');
 		$peakPowerKwp = $this->getPeakPowerKwp($propal);
 		$ownerEntity = !empty($propal->entity) ? (int) $propal->entity : (int) $GLOBALS['conf']->entity;
+		$projectionYears = (int) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_PROJECTION_YEARS', '20', $ownerEntity);
+		if ($projectionYears < LmdbPropalPVFinancialCalculator::MIN_PROJECTION_YEARS || $projectionYears > LmdbPropalPVFinancialCalculator::MAX_PROJECTION_YEARS) {
+			$projectionYears = 20;
+		}
 		$proposalDate = !empty($propal->date) ? dol_print_date($propal->date, '%Y-%m-%d') : dol_print_date(dol_now(), '%Y-%m-%d');
 		$hasFirstYearDegradation = $this->optionIsSet($propal, 'lmdbpropalpv_first_year_degradation_pct');
 		$hasAnnualDegradation = $this->optionIsSet($propal, 'lmdbpropalpv_panel_degradation_pct');
@@ -74,6 +111,9 @@ class LmdbPropalPVStudyService
 			'feed_in_price_per_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_feed_in_price_per_kwh', 0.0),
 			'premium_per_kwp' => $this->optionFloat($propal, 'lmdbpropalpv_premium_per_kwp', 0.0),
 			'tariff_set_id' => (int) $this->optionFloat($propal, 'lmdbpropalpv_tariff_set_id', 0.0),
+			'battery_self_consumption_pct' => $this->optionNullableFloat($propal, 'lmdbpropalpv_battery_self_consumption_pct'),
+			'battery_proposal_id' => (int) $this->optionFloat($propal, 'lmdbpropalpv_fk_battery_propal', 0.0),
+			'battery_extra_investment_ttc' => $this->optionNullableFloat($propal, 'lmdbpropalpv_battery_extra_investment_ttc'),
 		);
 
 		$missing = array();
@@ -117,6 +157,28 @@ class LmdbPropalPVStudyService
 			$missing[] = 'LmdbPropalPVMissingReferenceDate';
 		}
 
+		$batteryRate = $values['battery_self_consumption_pct'];
+		$batteryExtraInvestment = $values['battery_extra_investment_ttc'];
+		$batteryProposalId = (int) $values['battery_proposal_id'];
+		$batteryConfigured = $batteryRate !== null || $batteryExtraInvestment !== null || $batteryProposalId > 0;
+		$batteryMissing = array();
+		if ($batteryConfigured && ($batteryRate === null || (float) $batteryRate < 0.0 || (float) $batteryRate > 100.0)) {
+			$batteryMissing[] = $batteryRate === null ? 'LmdbPropalPVMissingBatterySelfConsumption' : 'LmdbPropalPVInvalidBatterySelfConsumption';
+		}
+		if ($batteryConfigured && ($batteryExtraInvestment === null || (float) $batteryExtraInvestment <= 0.0)) {
+			$batteryMissing[] = 'LmdbPropalPVMissingBatteryExtraInvestment';
+		}
+		$batterySource = null;
+		$batteryWarningKeys = array();
+		if ($batteryProposalId > 0) {
+			$batterySource = $this->resolveBatteryProposalSnapshot($propal, $batteryProposalId);
+			if ($batterySource === null) {
+				$batteryWarningKeys[] = 'LmdbPropalPVBatteryProposalUnavailable';
+			}
+		}
+		$batteryComplete = $batteryConfigured && empty($batteryMissing);
+		$batteryInvestmentTtc = (float) price2num($investmentTtc + ($batteryExtraInvestment !== null ? (float) $batteryExtraInvestment : 0.0), 'MT');
+
 		$input = null;
 		$result = null;
 		if (empty($missing)) {
@@ -131,9 +193,29 @@ class LmdbPropalPVStudyService
 				(float) $values['electricity_growth_pct'] / 100.0,
 				(float) $values['retail_price_per_kwh'],
 				(float) $values['feed_in_price_per_kwh'],
-				(float) $values['premium_per_kwp']
+				(float) $values['premium_per_kwp'],
+				$projectionYears
 			);
 			$result = (new LmdbPropalPVFinancialCalculator())->calculate($input);
+		}
+		$batteryInput = null;
+		$batteryResult = null;
+		if (empty($missing) && $batteryComplete && $batteryRate !== null) {
+			$batteryInput = new LmdbPropalPVFinancialInput(
+				$batteryInvestmentTtc,
+				$currencyCode,
+				$peakPowerKwp,
+				(float) $values['annual_production_kwh'],
+				(float) $batteryRate / 100.0,
+				(float) $values['first_year_degradation_pct'] / 100.0,
+				(float) $values['panel_degradation_pct'] / 100.0,
+				(float) $values['electricity_growth_pct'] / 100.0,
+				(float) $values['retail_price_per_kwh'],
+				(float) $values['feed_in_price_per_kwh'],
+				(float) $values['premium_per_kwp'],
+				$projectionYears
+			);
+			$batteryResult = (new LmdbPropalPVFinancialCalculator())->calculate($batteryInput);
 		}
 		$connectionResult = (new LmdbPropalPVConnectionPowerChecker())->check(new LmdbPropalPVConnectionPowerInput(
 			$peakPowerKwp,
@@ -148,6 +230,17 @@ class LmdbPropalPVStudyService
 			'missing' => $missing,
 			'input' => $input,
 			'result' => $result,
+			'projection_years' => $projectionYears,
+			'battery_configured' => $batteryConfigured,
+			'battery_complete' => $batteryComplete,
+			'battery_missing' => $batteryMissing,
+			'battery_input' => $batteryInput,
+			'battery_result' => $batteryResult,
+			'battery_extra_investment_ttc' => $batteryExtraInvestment,
+			'battery_investment_ttc' => $batteryInvestmentTtc,
+			'battery_proposal_id' => $batteryProposalId,
+			'battery_proposal_source' => $batterySource,
+			'battery_warning_keys' => $batteryWarningKeys,
 			'peak_power_kwp' => $peakPowerKwp,
 			'investment_ttc' => $investmentTtc,
 			'currency_code' => $currencyCode,
@@ -161,6 +254,66 @@ class LmdbPropalPVStudyService
 			'connection_product_refs' => array_values($inverterResolution['product_refs']),
 			'connection_source' => (string) $inverterResolution['source'],
 		);
+	}
+
+
+	/**
+	 * List battery proposals compatible with the current proposal.
+	 *
+	 * @param Propal $propal Loaded current proposal
+	 * @return array<int,array{id:int,label:string,amount_ttc:float,ref:string,ref_client:string}>
+	 */
+	public function getBatteryProposalOptions($propal)
+	{
+		$options = array();
+		if ((int) $propal->socid <= 0 || (int) $propal->id <= 0) {
+			return $options;
+		}
+		$currencyCode = $this->proposalCurrencyCode($propal);
+		$sql = 'SELECT p.rowid, p.ref, p.ref_client, p.total_ttc, p.multicurrency_total_ttc, p.multicurrency_code';
+		$sql .= ' FROM '.MAIN_DB_PREFIX.'propal AS p';
+		$sql .= ' WHERE p.entity = '.((int) $propal->entity);
+		$sql .= ' AND p.fk_soc = '.((int) $propal->socid);
+		$sql .= ' AND p.rowid <> '.((int) $propal->id);
+		$sql .= ' ORDER BY p.datep DESC, p.rowid DESC';
+		$resql = $this->db->query($sql);
+		if (!$resql) {
+			return $options;
+		}
+		while (is_object($obj = $this->db->fetch_object($resql))) {
+			$candidateCurrency = !empty($obj->multicurrency_code) ? (string) $obj->multicurrency_code : (string) $GLOBALS['conf']->currency;
+			if ($candidateCurrency !== $currencyCode) {
+				continue;
+			}
+			$amountRaw = !empty($obj->multicurrency_code) ? (float) $obj->multicurrency_total_ttc : (float) $obj->total_ttc;
+			$label = (string) $obj->ref;
+			if (!empty($obj->ref_client)) {
+				$label .= ' - '.(string) $obj->ref_client;
+			}
+			$options[(int) $obj->rowid] = array(
+				'id' => (int) $obj->rowid,
+				'label' => $label,
+				'amount_ttc' => (float) price2num($amountRaw, 'MT'),
+				'ref' => (string) $obj->ref,
+				'ref_client' => (string) $obj->ref_client,
+			);
+		}
+		$this->db->free($resql);
+
+		return $options;
+	}
+
+	/**
+	 * Resolve and validate a proposal used as the source of a battery snapshot.
+	 *
+	 * @param Propal $propal            Loaded current proposal
+	 * @param int    $batteryProposalId Source proposal ID
+	 * @return array{id:int,label:string,amount_ttc:float,ref:string,ref_client:string}|null
+	 */
+	public function resolveBatteryProposalSnapshot($propal, $batteryProposalId)
+	{
+		$options = $this->getBatteryProposalOptions($propal);
+		return isset($options[(int) $batteryProposalId]) ? $options[(int) $batteryProposalId] : null;
 	}
 
 	/**
@@ -202,6 +355,24 @@ class LmdbPropalPVStudyService
 		}
 
 		return function_exists('powerplantpvGetObjectPeakPowerKwc') ? (float) powerplantpvGetObjectPeakPowerKwc($propal) : 0.0;
+	}
+
+
+	/** @return string */
+	private function proposalCurrencyCode($propal)
+	{
+		return !empty($propal->multicurrency_code) ? (string) $propal->multicurrency_code : (string) $GLOBALS['conf']->currency;
+	}
+
+	/** @return float|null */
+	private function optionNullableFloat($propal, $key)
+	{
+		$optionKey = 'options_'.$key;
+		if (!isset($propal->array_options[$optionKey]) || $propal->array_options[$optionKey] === '') {
+			return null;
+		}
+
+		return (float) $propal->array_options[$optionKey];
 	}
 
 	/** @return float */

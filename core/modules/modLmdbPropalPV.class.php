@@ -27,6 +27,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->module_parts = array(
 			'models' => 1,
 			'hooks' => array('propalcard'),
+			'css' => array('/lmdbpropalpv/css/lmdbpropalpv.css'),
 		);
 		$this->dirs = array();
 		$this->config_page_url = array('setup.php@lmdbpropalpv');
@@ -50,8 +51,10 @@ class modLmdbPropalPV extends DolibarrModules
 			array('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'chaine', '3', 'Default electricity annual growth percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'chaine', 'base', 'Default retail tariff mode', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', 'chaine', '6', 'Default retail subscribed power', 0, 'current', 0),
+			array('LMDBPROPALPV_PROJECTION_YEARS', 'chaine', '20', 'Financial projection duration in years', 0, 'current', 0),
 			array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'chaine', '#16324F', 'Primary PDF color', 0, 'current', 0),
 			array('LMDBPROPALPV_PDF_ACCENT_COLOR', 'chaine', '#F2B705', 'Accent PDF color', 0, 'current', 0),
+			array('LMDBPROPALPV_BATTERY_COLOR', 'chaine', '#2E7D32', 'With-battery scenario color', 0, 'current', 0),
 			array('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'chaine', 'cyan', 'Proposal PDF model used as commercial body', 0, 'current', 0),
 			array('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'chaine', '', 'Optional financial disclaimer', 0, 'current', 0),
 			array('LMDBPROPALPV_DOCUMENT_MODEL_METADATA_FIXED', 'chaine', '0', 'Document model metadata migration marker', 0, 'current', 0),
@@ -179,7 +182,10 @@ class modLmdbPropalPV extends DolibarrModules
 		$extrafields = new ExtraFields($this->db);
 		$fields = array(
 			array('lmdbpropalpv_annual_production_kwh', 'LmdbPropalPVAnnualProduction', 'double', '24,8', ''),
-			array('lmdbpropalpv_self_consumption_pct', 'LmdbPropalPVSelfConsumption', 'double', '8,4', ''),
+			array('lmdbpropalpv_self_consumption_pct', 'LmdbPropalPVSelfConsumptionWithoutBattery', 'double', '8,4', ''),
+			array('lmdbpropalpv_battery_self_consumption_pct', 'LmdbPropalPVSelfConsumptionWithBattery', 'double', '8,4', ''),
+			array('lmdbpropalpv_fk_battery_propal', 'LmdbPropalPVBatteryProposal', 'int', '11', ''),
+			array('lmdbpropalpv_battery_extra_investment_ttc', 'LmdbPropalPVBatteryExtraInvestment', 'double', '24,8', ''),
 			array('lmdbpropalpv_first_year_degradation_pct', 'LmdbPropalPVFirstYearDegradation', 'double', '8,4', ''),
 			array('lmdbpropalpv_panel_degradation_pct', 'LmdbPropalPVPanelDegradation', 'double', '8,4', ''),
 			array('lmdbpropalpv_electricity_growth_pct', 'LmdbPropalPVElectricityGrowth', 'double', '8,4', ''),

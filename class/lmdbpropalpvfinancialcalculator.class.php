@@ -7,7 +7,10 @@ require_once __DIR__.'/lmdbpropalpvfinancialresult.class.php';
 /** Pure, deterministic financial engine. */
 class LmdbPropalPVFinancialCalculator
 {
+	/** @deprecated Use the projection duration carried by LmdbPropalPVFinancialInput. */
 	public const PROJECTION_YEARS = 20;
+	public const MIN_PROJECTION_YEARS = 1;
+	public const MAX_PROJECTION_YEARS = 50;
 
 	/**
 	 * Calculate the full projection without SQL, rendering or intermediate rounding.
@@ -18,10 +21,11 @@ class LmdbPropalPVFinancialCalculator
 	{
 		$this->validate($input);
 		$result = new LmdbPropalPVFinancialResult();
+		$result->projectionYears = $input->projectionYears;
 		$result->initialCashflow = -$input->investmentTtc;
 		$cumulative = $result->initialCashflow;
 
-		for ($yearNumber = 1; $yearNumber <= self::PROJECTION_YEARS; $yearNumber++) {
+		for ($yearNumber = 1; $yearNumber <= $input->projectionYears; $yearNumber++) {
 			$exponent = $yearNumber - 1;
 			$year = new LmdbPropalPVFinancialYear();
 			$year->year = $yearNumber;
@@ -52,7 +56,7 @@ class LmdbPropalPVFinancialCalculator
 
 		$result->netGain = $result->totalGrossGain - $input->investmentTtc;
 		$result->roiRate = $result->netGain / $input->investmentTtc;
-		$result->averageAnnualReturnRate = ($result->totalGrossGain / $input->investmentTtc) / self::PROJECTION_YEARS;
+		$result->averageAnnualReturnRate = ($result->totalGrossGain / $input->investmentTtc) / $input->projectionYears;
 		$result->simplifiedProductionCostPerKwh = $result->totalProductionKwh > 0.0
 			? ($input->investmentTtc - $result->totalPremium) / $result->totalProductionKwh
 			: 0.0;
@@ -63,6 +67,9 @@ class LmdbPropalPVFinancialCalculator
 	/** @throws InvalidArgumentException */
 	private function validate(LmdbPropalPVFinancialInput $input): void
 	{
+		if ($input->projectionYears < self::MIN_PROJECTION_YEARS || $input->projectionYears > self::MAX_PROJECTION_YEARS) {
+			throw new InvalidArgumentException('Projection duration must be between one and fifty years.');
+		}
 		if ($input->investmentTtc <= 0.0 || $input->peakPowerKwp <= 0.0 || $input->annualProductionKwh <= 0.0) {
 			throw new InvalidArgumentException('Investment, peak power and annual production must be positive.');
 		}

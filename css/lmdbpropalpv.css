@@ -1,0 +1,87 @@
+.lmdbpropalpv-study .lmdbpropalpv-production {
+	max-width: 760px;
+	margin: 0 auto 14px;
+}
+
+.lmdbpropalpv-study .lmdbpropalpv-comparison-layout > .fichehalfleft,
+.lmdbpropalpv-study .lmdbpropalpv-comparison-layout > .fichehalfright {
+	box-sizing: border-box;
+	padding: 0 8px;
+}
+
+.lmdbpropalpv-study .lmdbpropalpv-secondary-layout {
+	margin-top: 18px;
+}
+
+.lmdbpropalpv-study .lmdbpropalpv-actions {
+	margin: 18px 0;
+}
+
+.lmdbpropalpv-scenario-legend {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px 22px;
+	margin: 10px 0 14px;
+	font-weight: 600;
+}
+
+.lmdbpropalpv-scenario-legend span {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+}
+
+.lmdbpropalpv-scenario-legend i {
+	display: inline-block;
+	width: 22px;
+	height: 6px;
+	border-radius: 3px;
+}
+
+.lmdbpropalpv-comparison-badges {
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 3px;
+}
+
+.lmdbpropalpv-scenario-badge {
+	display: inline-block;
+	box-sizing: border-box;
+	max-width: 100%;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: .86em;
+	font-weight: 600;
+	line-height: 1.25;
+	white-space: nowrap;
+}
+
+.lmdbpropalpv-scenario-badge-empty {
+	color: var(--colortext, #444);
+	background: var(--colorbacklineimpair, #eee);
+	border: 1px solid var(--colortextweak, #aaa);
+}
+
+.lmdbpropalpv-scenario-badge-large .lmdbpropalpv-scenario-badge {
+	padding: .3em .48em;
+	font-size: 1.5em;
+	line-height: 1.2;
+	border-radius: 6px;
+}
+
+.lmdbpropalpv-projection-table td {
+	vertical-align: middle;
+}
+
+@media only screen and (max-width: 900px) {
+	.lmdbpropalpv-study .lmdbpropalpv-comparison-layout > .fichehalfleft,
+	.lmdbpropalpv-study .lmdbpropalpv-comparison-layout > .fichehalfright {
+		float: none;
+		width: 100%;
+		padding: 0;
+		margin-bottom: 14px;
+	}
+}

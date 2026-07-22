@@ -41,8 +41,11 @@ Ce dépôt est directement la racine du module externe Dolibarr `lmdbpropalpv`.
 ## Calculs financiers
 
 - Le moteur de projection reste pur : aucune lecture SQL, aucun rendu, aucune dépendance Dolibarr.
-- Il produit exactement 20 années et ne persiste jamais les lignes calculées.
+- Il produit de 1 à 50 années selon `LMDBPROPALPV_PROJECTION_YEARS`, avec 20 ans par défaut, et ne persiste jamais les lignes calculées.
 - Aucun arrondi intermédiaire.
+- Le scénario sans batterie conserve le taux et l’investissement du devis courant.
+- Le scénario avec batterie reste facultatif et utilise un taux explicite ainsi que le total du devis courant augmenté d’un surcoût TTC figé.
+- Un devis batterie lié doit appartenir au même tiers, à la même entité et à la même devise ; son snapshot ne change que lors d’une sélection ou actualisation POST explicite.
 - Normaliser les prix unitaires avec `price2num($value, 'MU')`, les totaux avec `price2num($value, 'MT')` et afficher les montants avec `price()`.
 - Ne jamais utiliser `round(..., 2)`, `number_format(..., 2)` ou une précision monétaire codée en dur.
 - La puissance-crête provient exclusivement de `powerplantpvGetObjectPeakPowerKwc($propal)`.
@@ -66,7 +69,7 @@ Ce dépôt est directement la racine du module externe Dolibarr `lmdbpropalpv`.
 - Préserver les hooks PDF, les traductions, les notes, remises, TVA, multicurrency et conditions commerciales.
 - Réserver la hauteur réelle du pied avant tout contenu.
 - Appeler `_pagefoot(..., 1)` sur toutes les pages intermédiaires et `_pagefoot(..., 0)` seulement sur la dernière page.
-- Tester les variantes sans photo, multipages, textes longs, signature en ligne et QR code.
+- Tester les variantes sans photo, multipages jusqu’à 50 ans, textes longs, deux courbes et deux temps de retour, signature en ligne et QR code.
 
 ## Compatibilité et qualité
 

@@ -6,6 +6,7 @@ require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
+dol_include_once('/lmdbpropalpv/class/lmdbpropalpvfinancialcalculator.class.php');
 
 $langs->loadLangs(array('admin', 'propal', 'lmdbpropalpv@lmdbpropalpv'));
 if (!isModEnabled('lmdbpropalpv')) {
@@ -23,11 +24,16 @@ if ($action === 'save') {
 	}
 	$primaryColor = strtoupper(GETPOST('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'alphanohtml'));
 	$accentColor = strtoupper(GETPOST('LMDBPROPALPV_PDF_ACCENT_COLOR', 'alphanohtml'));
+	$batteryColor = strtoupper(GETPOST('LMDBPROPALPV_BATTERY_COLOR', 'alphanohtml'));
+	$projectionYears = GETPOSTINT('LMDBPROPALPV_PROJECTION_YEARS');
 	if ($primaryColor !== '' && substr($primaryColor, 0, 1) !== '#') {
 		$primaryColor = '#'.$primaryColor;
 	}
 	if ($accentColor !== '' && substr($accentColor, 0, 1) !== '#') {
 		$accentColor = '#'.$accentColor;
+	}
+	if ($batteryColor !== '' && substr($batteryColor, 0, 1) !== '#') {
+		$batteryColor = '#'.$batteryColor;
 	}
 	$values = array(
 		'LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'alphanohtml'),
@@ -36,8 +42,10 @@ if ($action === 'save') {
 		'LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT' => GETPOST('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'alphanohtml'),
 		'LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE' => GETPOST('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'alpha'),
 		'LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA' => GETPOST('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', 'alphanohtml'),
+		'LMDBPROPALPV_PROJECTION_YEARS' => (string) $projectionYears,
 		'LMDBPROPALPV_PDF_PRIMARY_COLOR' => $primaryColor,
 		'LMDBPROPALPV_PDF_ACCENT_COLOR' => $accentColor,
+		'LMDBPROPALPV_BATTERY_COLOR' => $batteryColor,
 		'LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL' => GETPOST('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'aZ09'),
 		'LMDBPROPALPV_FINANCIAL_DISCLAIMER' => GETPOST('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'restricthtml'),
 	);
@@ -56,6 +64,10 @@ if ($action === 'save') {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidDefaultPercentage'), null, 'errors');
 		$error++;
 	}
+	if ($projectionYears < LmdbPropalPVFinancialCalculator::MIN_PROJECTION_YEARS || $projectionYears > LmdbPropalPVFinancialCalculator::MAX_PROJECTION_YEARS) {
+		setEventMessages($langs->trans('LmdbPropalPVInvalidProjectionYears'), null, 'errors');
+		$error++;
+	}
 	if (!in_array($values['LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE'], array('base', 'peak', 'manual'), true)) {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidTariffMode'), null, 'errors');
 		$error++;
@@ -68,7 +80,7 @@ if ($action === 'save') {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidBaseProposalModel'), null, 'errors');
 		$error++;
 	}
-	foreach (array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LMDBPROPALPV_PDF_ACCENT_COLOR') as $colorName) {
+	foreach (array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LMDBPROPALPV_PDF_ACCENT_COLOR', 'LMDBPROPALPV_BATTERY_COLOR') as $colorName) {
 		if (!preg_match('/^#[0-9A-F]{6}$/', $values[$colorName])) {
 			setEventMessages($langs->trans('LmdbPropalPVInvalidColor', $colorName), null, 'errors');
 			$error++;
@@ -115,15 +127,18 @@ print '<input type="hidden" name="token" value="'.newToken().'">';
 print '<input type="hidden" name="action" value="save">';
 print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVDefaultAssumptions').'</th></tr>';
-lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'LmdbPropalPVSelfConsumption', '68', ' %');
+lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'LmdbPropalPVSelfConsumptionWithoutBattery', '68', ' %');
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVProjectionYears').'</td><td><input class="flat maxwidth100" type="number" min="1" max="50" step="1" name="LMDBPROPALPV_PROJECTION_YEARS" value="'.((int) getDolGlobalInt('LMDBPROPALPV_PROJECTION_YEARS', 20)).'"> '.$langs->trans('LmdbPropalPVYears').'</td></tr>';
 lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'LmdbPropalPVFirstYearDegradation', '0.45', ' %');
 lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', 'LmdbPropalPVPanelDegradation', '0.45', ' %');
 lmdbpropalpvSetupNumberRow('LMDBPROPALPV_DEFAULT_ELECTRICITY_GROWTH_PCT', 'LmdbPropalPVElectricityGrowth', '3', ' %');
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVRetailTariffMode').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', array('base' => $langs->trans('LmdbPropalPVBase'), 'peak' => $langs->trans('LmdbPropalPVPeakHours'), 'manual' => $langs->trans('LmdbPropalPVManual')), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'base'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth200');
+print ajax_combobox('LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE');
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVSubscribedPower'), $langs->trans('LmdbPropalPVSubscribedPowerHelp'), 1, 'help').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', lmdbpropalpvGetSubscribedPowerOptions(), getDolGlobalString('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6'), 0, 0, 0, '', 0, 0, 0, '', 'minwidth150');
+print ajax_combobox('LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA');
 print '</td></tr>';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVPdfAppearance').'</th></tr>';
 $currentBaseProposalModel = getDolGlobalString('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'cyan');
@@ -133,12 +148,16 @@ if (!isset($baseProposalModelSelectOptions[$currentBaseProposalModel])) {
 }
 print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVBaseProposalModel'), $langs->trans('LmdbPropalPVBaseProposalModelHelp'), 1, 'help').'</td><td>';
 print $form->selectarray('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', $baseProposalModelSelectOptions, $currentBaseProposalModel, 0, 0, 0, '', 0, 0, 0, '', 'minwidth300');
+print ajax_combobox('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL');
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPdfPrimaryColor').'</td><td>';
 print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F'), 'LMDBPROPALPV_PDF_PRIMARY_COLOR', '', 1, array(), 'maxwidth100', '', '#16324F');
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPdfAccentColor').'</td><td>';
 print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_PDF_ACCENT_COLOR', '#F2B705'), 'LMDBPROPALPV_PDF_ACCENT_COLOR', '', 1, array(), 'maxwidth100', '', '#F2B705');
+print '</td></tr>';
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVBatteryColor').'</td><td>';
+print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_BATTERY_COLOR', '#2E7D32'), 'LMDBPROPALPV_BATTERY_COLOR', '', 1, array(), 'maxwidth100', '', '#2E7D32');
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVFinancialDisclaimer').'</td><td><textarea class="flat centpercent" rows="3" name="LMDBPROPALPV_FINANCIAL_DISCLAIMER">'.dol_escape_htmltag(getDolGlobalString('LMDBPROPALPV_FINANCIAL_DISCLAIMER')).'</textarea></td></tr>';
 print '</table>';

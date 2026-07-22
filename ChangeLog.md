@@ -1,5 +1,13 @@
 # ChangeLog
 
+## Non publié
+
+- Comparaison financière sans et avec batterie, avec taux d’autoconsommation, surcoût TTC figé depuis un devis compatible ou saisi librement, et conservation du snapshot si la source devient inaccessible.
+- Période d’observation administrable par entité de 1 à 50 ans, avec 20 ans par défaut.
+- Courbes superposées, temps de retour distincts, projection annuelle et synthèse comparatives avec libellés et couleurs de scénario.
+- Deux PDF enrichis avec les deux scénarios, titres dynamiques et tableau annuel multipage à en-têtes répétés.
+- Tests du moteur étendus aux horizons 1, 12, 20, 25, 30 et 50 ans, aux bornes invalides et aux divergences entre scénarios.
+
 ## 1.0.0 - 2026-07-21
 
 - Première version de l’étude financière photovoltaïque sur 20 ans.

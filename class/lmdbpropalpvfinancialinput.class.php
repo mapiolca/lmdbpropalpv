@@ -1,7 +1,7 @@
 <?php
 /* Copyright (C) 2026 Pierre Ardoin <developpeur@lesmetiersdubatiment.fr> */
 
-/** Immutable normalized inputs for the 20-year financial projection. */
+/** Immutable normalized inputs for one financial projection scenario. */
 class LmdbPropalPVFinancialInput
 {
 	public float $investmentTtc;
@@ -15,6 +15,7 @@ class LmdbPropalPVFinancialInput
 	public float $retailPricePerKwh;
 	public float $feedInPricePerKwh;
 	public float $premiumPerKwp;
+	public int $projectionYears;
 
 	public function __construct(
 		float $investmentTtc,
@@ -27,7 +28,8 @@ class LmdbPropalPVFinancialInput
 		float $electricityGrowthRate,
 		float $retailPricePerKwh,
 		float $feedInPricePerKwh,
-		float $premiumPerKwp
+		float $premiumPerKwp,
+		int $projectionYears = 20
 	) {
 		$this->investmentTtc = $investmentTtc;
 		$this->currencyCode = $currencyCode;
@@ -40,5 +42,6 @@ class LmdbPropalPVFinancialInput
 		$this->retailPricePerKwh = $retailPricePerKwh;
 		$this->feedInPricePerKwh = $feedInPricePerKwh;
 		$this->premiumPerKwp = $premiumPerKwp;
+		$this->projectionYears = $projectionYears;
 	}
 }

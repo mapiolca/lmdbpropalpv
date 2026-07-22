@@ -2,7 +2,7 @@
 
 ## 1. Objet
 
-Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque sur 20 ans et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
+Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque comparative sans/avec batterie sur une durée administrable et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
 
 Version : `1.0.0`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
 
@@ -29,7 +29,9 @@ La puissance-crête provient exclusivement de `powerplantpvGetObjectPeakPowerKwc
 Les hypothèses saisies sont :
 
 - production annuelle initiale en kWh, obligatoire ;
-- taux d’autoconsommation ;
+- taux d’autoconsommation sans batterie ;
+- taux d’autoconsommation avec batterie, facultatif ;
+- surcoût batterie TTC libre ou snapshot d’un devis compatible du même tiers, de la même entité et de la même devise ;
 - dégradation des panneaux la première année ;
 - dégradation annuelle à partir de l’année 2 ;
 - augmentation annuelle du prix de l’électricité ;
@@ -65,15 +67,17 @@ Le rechargement d’un barème ou des caractéristiques panneaux est une action 
 
 L’étude est complète lorsque la puissance-crête, le total TTC, la production, les pourcentages, le prix réseau, le barème de surplus et la date de référence sont valides. Les valeurs nulles de prime ou de tarif de vente restent autorisées lorsqu’elles sont prévues par le barème officiel.
 
+Une configuration batterie absente ou partielle ne rend pas le scénario sans batterie incomplet. Elle produit un avertissement non bloquant ; la comparaison batterie n’est calculée que lorsque son taux et son surcoût sont valides.
+
 Une étude incomplète liste les informations manquantes. La génération d’un modèle PV reste possible, mais les pages financières sont omises et un avertissement Dolibarr non bloquant est affiché.
 
-La bannière reprend les informations natives de la fiche Proposition commerciale : référence client, tiers, lien vers les autres propositions et projet. Les états « Étude complète », « Étude incomplète » et « Lecture seule » sont affichés avec des badges Dolibarr natifs contenant leur libellé, dans un tableau `fichehalfright` aligné sur les lignes puissance-crête et investissement. La valeur du temps de retour est affichée dans un badge bleu natif.
+La bannière reprend les informations natives de la fiche Proposition commerciale : référence client, tiers, lien vers les autres propositions et projet. Les états « Étude complète », « Étude incomplète » et « Lecture seule » sont affichés avec des badges Dolibarr natifs contenant leur libellé, dans un tableau `fichehalfright` aligné sur les lignes puissance-crête et investissement. Les indicateurs comparatifs et les deux temps de retour utilisent des badges de scénario au format `h2`, sans modifier les badges natifs de statut ; les valeurs annuelles conservent des badges compacts.
 
 ## 4. Calcul financier
 
-Le moteur est pur : il ne lit ni la base, ni Dolibarr, ni le réseau et ne produit aucun rendu. Il retourne exactement 20 lignes calculées, jamais persistées.
+Le moteur est pur : il ne lit ni la base, ni Dolibarr, ni le réseau et ne produit aucun rendu. Il retourne de 1 à 50 lignes calculées selon le réglage administrateur par entité, avec 20 par défaut, jamais persistées.
 
-Pour l’année `a`, de 1 à 20 :
+Pour l’année `a`, de 1 à `N` :
 
 ```text
 production année 1 = production_initiale × (1 - dégradation_première_année)
@@ -87,7 +91,7 @@ trésorerie_cumulée = -investissement + somme_des_gains
 rendement_annuel = gain_annuel / investissement
 ```
 
-Résultats : production totale, économies, ventes, prime, gains bruts, gain net, ROI à 20 ans, rendement annuel moyen, retour interpolé et coût de production simplifié.
+Le même moteur est exécuté deux fois : investissement et taux du devis pour le scénario sans batterie ; investissement augmenté du surcoût et taux dédié pour le scénario avec batterie. Production, prix réseau et prime restent communs. Ventes, économies, gains, trésorerie, rendement, ROI, retour interpolé et coût simplifié sont recalculés par scénario.
 
 Il n’existe aucun flux parasite en année zéro. Aucun arrondi intermédiaire n’est appliqué. Les champs tarifaires unitaires sont normalisés avec `price2num(..., 'MU')`. Dans les résultats de projection, toutes les valeurs présentées sont normalisées avec `price2num(..., 'MT')`, sauf la colonne « Prix réseau » qui conserve `price2num(..., 'MU')`. L’affichage passe par `price()` afin de suivre les réglages Dolibarr. Cette normalisation reste limitée à l’affichage et ne réduit pas la précision interne du moteur financier.
 
@@ -95,10 +99,13 @@ Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 % en première année, 0,45 % 
 
 ## 5. Stockage
 
-Les hypothèses sont stockées dans 13 extrafields `propal`, invisibles sur la fiche principale :
+Les hypothèses sont stockées dans 16 extrafields `propal`, invisibles sur la fiche principale :
 
 - `lmdbpropalpv_annual_production_kwh` ;
 - `lmdbpropalpv_self_consumption_pct` ;
+- `lmdbpropalpv_battery_self_consumption_pct` ;
+- `lmdbpropalpv_fk_battery_propal` ;
+- `lmdbpropalpv_battery_extra_investment_ttc` ;
 - `lmdbpropalpv_first_year_degradation_pct` ;
 - `lmdbpropalpv_panel_degradation_pct` ;
 - `lmdbpropalpv_electricity_growth_pct` ;
@@ -138,13 +145,13 @@ Les modèles natifs `propal` sont :
 - `lmdbpropalpv_withpictures` — PV Signature illustré ;
 - `lmdbpropalpv_withoutpictures` — PV Signature épuré.
 
-Les deux classes publiques sont minces et partagent un renderer. L’administrateur choisit, pour chaque entité, le modèle PDF actif de proposition commerciale qui produit le corps commercial afin de conserver ses lignes, TVA, remises, multicurrency, notes, conditions, hooks, photos produits et options natives d’intégration des CGV et fiches produits. Les deux modèles PV Signature et les variantes ODT sont exclus de ce choix pour éviter la récursion et garantir une composition PDF. Cyan reste uniquement le repli sûr lorsqu’un modèle configuré devient indisponible. Le modèle commercial achève sa génération avant la composition : toutes ses pages, y compris les CGV et fiches produits activées, sont alors comptées. Pendant la production du corps commercial et du supplément PV, le compteur natif de chaque document source est déplacé hors page sans modifier le reste du pied légal. Le renderer assemble ensuite la couverture, le corps complet et les pages PV, puis injecte le numéro réel et le nombre total réel dans une pagination globale unique. Il ajoute un encadré jaune de diagnostic de raccordement et, si l’étude est complète, une page financière avec indicateurs, courbe et tableau des 20 années. La courbe comporte des graduations d’années et de trésorerie, ainsi que les repères horizontal et vertical du point d’amortissement. Son libellé est posé au-dessus de la courbe sur un fond protecteur afin de rester lisible. Le même repère est affiché dans l’onglet du devis.
+Les deux classes publiques sont minces et partagent un renderer. L’administrateur choisit, pour chaque entité, le modèle PDF actif de proposition commerciale qui produit le corps commercial afin de conserver ses lignes, TVA, remises, multicurrency, notes, conditions, hooks, photos produits et options natives d’intégration des CGV et fiches produits. Les deux modèles PV Signature et les variantes ODT sont exclus de ce choix pour éviter la récursion et garantir une composition PDF. Cyan reste uniquement le repli sûr lorsqu’un modèle configuré devient indisponible. Le modèle commercial achève sa génération avant la composition : toutes ses pages, y compris les CGV et fiches produits activées, sont alors comptées. Pendant la production du corps commercial et du supplément PV, le compteur natif de chaque document source est déplacé hors page sans modifier le reste du pied légal. Le renderer assemble ensuite la couverture, le corps complet et les pages PV, puis injecte le numéro réel et le nombre total réel dans une pagination globale unique. Il ajoute un encadré jaune de diagnostic de raccordement et, si l’étude est complète, des pages financières avec légende sans/avec batterie, deux courbes superposées, deux temps de retour et un tableau annuel paginé jusqu’à 50 ans avec en-têtes répétés. La courbe comporte des graduations d’années et de trésorerie, ainsi qu’un repère vertical coloré pour chaque temps de retour atteint. Les libellés sont décalés lorsque les deux retours sont proches. Les mêmes repères sont affichés dans l’onglet du devis.
 
 Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv_withoutpictures`, tandis que `document_model.libelle` porte les noms traduits « PV Signature illustré » et « PV Signature épuré ». Le champ `document_model.description` reste vide pour que Dolibarr traite ces entrées comme des modèles PHP et non comme des répertoires de modèles fichiers.
 
 La variante illustrée active uniquement la mécanique native de photos produits. Elle ne crée aucun stockage parallèle. La variante épurée désactive la colonne image.
 
-La couverture affiche le logo de l’entité, le client, la référence, la date, le total TTC et les indicateurs PV. Deux couleurs sont configurables par entité avec le sélecteur de couleur natif Dolibarr : bleu nuit `#16324F` et solaire `#F2B705`.
+La couverture affiche le logo de l’entité, le client, la référence, la date, le total TTC et les indicateurs PV. Trois couleurs sont configurables par entité avec le sélecteur natif Dolibarr : scénario sans batterie `#16324F`, accent solaire `#F2B705` et scénario avec batterie `#2E7D32`. Les libellés accompagnent toujours les couleurs.
 
 Si `PROPOSAL_ALLOW_ONLINESIGN` est actif et le devis validé, l’URL est construite par `getOnlineSignatureUrl()` et encodée dans un QR code natif TCPDF. Sinon, une zone « Bon pour accord » est affichée.
 
@@ -165,6 +172,8 @@ Le message d’activation explique ce comportement avant l’action administrate
 
 ## 9. Administration et droits
 
+La durée de projection de 1 à 50 ans et la couleur batterie sont des constantes par entité, modifiables uniquement par un administrateur.
+
 Les réglages internes sont `setup.php`, `tariffs.php`, `compatibility.php` et `about.php`. Seul `setup.php@lmdbpropalpv` est déclaré dans `config_page_url`.
 
 Droits :
@@ -179,7 +188,7 @@ Les identifiants sont calculés à partir de `450010 * 100 + r`. Un administrate
 
 - PVGIS et calcul automatique de production ;
 - financement, maintenance, remplacement d’onduleur, fiscalité, VAN et TRI ;
-- ZNI, vente totale, batterie ;
+- ZNI, vente totale et simulation horaire de charge/décharge de batterie ;
 - synchronisation automatique des tarifs ;
 - API, cron, trigger métier, Agenda, Notifications, import et export propres au module ;
 - migration automatique depuis `pvpropal` ou JPSUN ;

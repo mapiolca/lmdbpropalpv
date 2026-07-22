@@ -65,6 +65,9 @@ $result = $calculator->calculate($input);
 if (count($result->years) !== 20) {
 	throw new RuntimeException('The projection must contain exactly 20 years.');
 }
+if ($result->projectionYears !== 20) {
+	throw new RuntimeException('The default projection duration must remain 20 years.');
+}
 assertNear($result->initialCashflow, -1884.7575, 0.000001, 'Year 0 cash flow');
 assertNear($result->years[0]->productionKwh, 3456.0 * (1.0 - 0.0045), 0.000001, 'Year 1 production');
 assertNear($result->years[1]->productionKwh, 3456.0 * (1.0 - 0.0045) * pow(1.0 - 0.0045, 1), 0.000001, 'Year 2 production');
@@ -82,6 +85,30 @@ assertNear($result->averageAnnualReturnRate, 0.37023906001845, 0.000000001, 'Ave
 assertNear((float) $result->paybackYears, 2.944947177809, 0.000001, 'Interpolated payback');
 assertNear($result->simplifiedProductionCostPerKwh, 0.024941238282, 0.000000001, 'Simplified production cost');
 
+foreach (array(1, 12, 20, 25, 30, 50) as $projectionYears) {
+	$durationResult = $calculator->calculate(new LmdbPropalPVFinancialInput(1884.7575, 'EUR', 3.0, 3456.0, 0.68, 0.0045, 0.0045, 0.03, 0.2146, 0.04, 80.0, $projectionYears));
+	if (count($durationResult->years) !== $projectionYears || $durationResult->projectionYears !== $projectionYears) {
+		throw new RuntimeException('Unexpected projection row count for '.((string) $projectionYears).' years.');
+	}
+	assertNear($durationResult->averageAnnualReturnRate, ($durationResult->totalGrossGain / 1884.7575) / $projectionYears, 0.000000001, 'Average annual return denominator');
+}
+
+$withoutBattery = $calculator->calculate(new LmdbPropalPVFinancialInput(10000.0, 'EUR', 6.0, 6000.0, 0.50, 0.0045, 0.0045, 0.03, 0.20, 0.04, 0.0, 25));
+$withBattery = $calculator->calculate(new LmdbPropalPVFinancialInput(14000.0, 'EUR', 6.0, 6000.0, 0.80, 0.0045, 0.0045, 0.03, 0.20, 0.04, 0.0, 25));
+assertNear($withoutBattery->totalProductionKwh, $withBattery->totalProductionKwh, 0.000001, 'Scenario production parity');
+if ($withBattery->totalElectricitySavings <= $withoutBattery->totalElectricitySavings) {
+	throw new RuntimeException('A higher self-consumption rate must increase electricity savings.');
+}
+if ($withBattery->totalSurplusSale >= $withoutBattery->totalSurplusSale) {
+	throw new RuntimeException('A higher self-consumption rate must reduce surplus sales.');
+}
+if ($withBattery->initialCashflow !== -14000.0) {
+	throw new RuntimeException('The battery surcharge must be included in the with-battery initial cash flow.');
+}
+if ($withoutBattery->paybackYears === null || $withBattery->paybackYears === null || abs($withoutBattery->paybackYears - $withBattery->paybackYears) < 0.000001) {
+	throw new RuntimeException('Different self-consumption rates and investments must produce distinct payback times.');
+}
+
 $slow = $calculator->calculate(new LmdbPropalPVFinancialInput(100000.0, 'EUR', 3.0, 1000.0, 0.5, 0.005, 0.005, 0.0, 0.10, 0.02, 0.0));
 if ($slow->paybackYears !== null) {
 	throw new RuntimeException('Payback must be null when it is not reached within 20 years.');
@@ -98,6 +125,8 @@ if (!$invalidRejected) {
 }
 
 $invalidInputs = array(
+	new LmdbPropalPVFinancialInput(10000.0, 'EUR', 3.0, 3000.0, 0.5, 0.005, 0.005, 0.0, 0.20, 0.04, 80.0, 0),
+	new LmdbPropalPVFinancialInput(10000.0, 'EUR', 3.0, 3000.0, 0.5, 0.005, 0.005, 0.0, 0.20, 0.04, 80.0, 51),
 	new LmdbPropalPVFinancialInput(0.0, 'EUR', 3.0, 3000.0, 0.5, 0.005, 0.005, 0.0, 0.20, 0.04, 80.0),
 	new LmdbPropalPVFinancialInput(10000.0, 'EUR', 0.0, 3000.0, 0.5, 0.005, 0.005, 0.0, 0.20, 0.04, 80.0),
 	new LmdbPropalPVFinancialInput(10000.0, 'EUR', 3.0, 0.0, 0.5, 0.005, 0.005, 0.0, 0.20, 0.04, 80.0),

@@ -18,8 +18,9 @@ Version `1.0.0` — identifiant Dolibarr `450010` — famille « Les Métiers du
 - puissance-crête lue depuis PowerPlantPV ;
 - dégradations de première année et des années suivantes proposées depuis les modules PowerPlantPV, pondérées par puissance puis figées dans le devis ;
 - hypothèses propres à chaque devis stockées en extrafields ;
-- projection pure sur 20 ans, sans persistance des lignes calculées ;
-- graphiques avec graduations et repères du point d’amortissement ;
+- projection pure sur une période administrable de 1 à 50 ans, avec 20 ans par défaut et sans persistance des lignes calculées ;
+- comparaison facultative sans/avec batterie, courbes superposées, deux temps de retour et badges de scénario explicites ;
+- surcoût batterie TTC libre ou figé depuis un autre devis du même tiers, de la même entité et de la même devise ;
 - puissances souscrites du Tarif Bleu et du Tarif Jaune, de 37 à 250 kVA par pas de 1 kVA pour ce dernier ;
 - contrôle indicatif de raccordement à partir de la puissance-crête et des puissances AC nominales des onduleurs PowerPlantPV ;
 - barèmes officiels S21 et TRVE embarqués depuis 2021, sans accès Internet à l’exécution ;
@@ -41,13 +42,13 @@ L’étude est accessible depuis l’onglet « Étude financière PV » d’une 
 
 Le module calcule la Pmax de raccordement comme le minimum entre la puissance-crête et la somme des puissances AC nominales des produits ONDULE. Il propose monophasé ou triphasé, compare la Pmax à la puissance souscrite et affiche des alertes informatives dans l’onglet et les deux PDF. Une donnée onduleur absente provoque un repli prudent sur la puissance-crête, jamais une erreur fatale.
 
-Les boutons « Recharger le barème applicable » et « Recharger les caractéristiques panneaux » sont les seules actions qui remplacent explicitement leurs snapshots respectifs. Une mise à jour du module, des barèmes ou des fiches produits ne modifie jamais un devis existant.
+Les boutons « Recharger le barème applicable » et « Recharger les caractéristiques panneaux » sont les seules actions qui remplacent explicitement leurs snapshots respectifs. Le surcoût issu d’un devis batterie est lui aussi figé ; le bouton « Actualiser depuis le devis batterie » est la seule action qui le recharge. Si le devis source disparaît ou devient inaccessible, le snapshot reste utilisable avec un avertissement. Une mise à jour du module, des barèmes ou des fiches produits ne modifie jamais un devis existant.
 
 Les données de la projection affichées dans l’onglet et les PDF respectent le réglage Dolibarr du nombre maximal de décimales des prix totaux. Seule la colonne « Prix réseau » conserve la précision configurée pour les prix unitaires. Les champs tarifaires unitaires saisis sur le devis restent également normalisés comme prix unitaires.
 
 La puissance souscrite peut être choisie parmi les puissances usuelles du Tarif Bleu et toutes les puissances entières du Tarif Jaune de 37 à 250 kVA. Les barèmes Jaunes personnalisés peuvent être enregistrés pour ces puissances depuis l’administration ; aucun prix horosaisonnier Jaune n’est inventé lorsque le barème correspondant n’existe pas.
 
-Les réglages internes permettent de définir les hypothèses par défaut, les couleurs PDF avec le sélecteur natif Dolibarr, l’avertissement financier, le modèle PDF actif utilisé pour produire le corps commercial et les barèmes propres à l’entité. Les modèles actifs et le modèle de devis par défaut restent administrés par la page native des propositions commerciales, où leurs noms traduits « PV Signature illustré » et « PV Signature épuré » sont affichés sans modifier leurs identifiants techniques. Cyan n’est utilisé qu’en repli lorsque le modèle commercial configuré devient indisponible. Le modèle commercial termine d’abord sa génération avec ses options natives d’intégration des CGV et des fiches produits. Les compteurs de pagination propres aux documents constituants sont neutralisés pendant leur génération ; le module compte ensuite toutes les pages obtenues et injecte une pagination globale unique dans le PDF assemblé.
+Les réglages internes permettent de définir les hypothèses par défaut, la période d’observation par entité, les couleurs des scénarios avec le sélecteur natif Dolibarr, l’avertissement financier, le modèle PDF actif utilisé pour produire le corps commercial et les barèmes propres à l’entité. Les modèles actifs et le modèle de devis par défaut restent administrés par la page native des propositions commerciales, où leurs noms traduits « PV Signature illustré » et « PV Signature épuré » sont affichés sans modifier leurs identifiants techniques. Cyan n’est utilisé qu’en repli lorsque le modèle commercial configuré devient indisponible. Le modèle commercial termine d’abord sa génération avec ses options natives d’intégration des CGV et des fiches produits. Les compteurs de pagination propres aux documents constituants sont neutralisés pendant leur génération ; le module compte ensuite toutes les pages obtenues et injecte une pagination globale unique dans le PDF assemblé.
 
 ## Données et documentation
 
@@ -56,7 +57,7 @@ Les réglages internes permettent de définir les hypothèses par défaut, les c
 - matrice de recette : [`docs/Matrice_tests_manuels.md`](docs/Matrice_tests_manuels.md) ;
 - prompts séquentiels : [`docs/prompts/`](docs/prompts/).
 
-La méthode de calcul est une estimation commerciale non contractuelle. La V1 exclut notamment PVGIS, financement, maintenance, fiscalité, VAN, TRI, batteries, ZNI, vente totale et synchronisation réseau des tarifs.
+La méthode de calcul est une estimation commerciale non contractuelle. La V1 exclut notamment PVGIS, financement, maintenance, fiscalité, VAN, TRI, simulation horaire de batterie, ZNI, vente totale et synchronisation réseau des tarifs.
 
 ## Contrôles développeur
 

@@ -20,6 +20,7 @@ class LmdbPropalPVFinancialResult
 {
 	/** @var list<LmdbPropalPVFinancialYear> */
 	public array $years = array();
+	public int $projectionYears = 20;
 	public float $initialCashflow = 0.0;
 	public float $totalProductionKwh = 0.0;
 	public float $totalSurplusSale = 0.0;

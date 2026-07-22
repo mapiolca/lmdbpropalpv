@@ -56,3 +56,18 @@
 | Compatibilité | Dolibarr 20 / PHP 8.0 | activation et pages sans erreur fatale |
 | Interface | survoler toutes les icônes d’aide de l’onglet, des réglages et des barèmes | tooltip natif visible avec `classfortooltip` et texte non vide |
 | Navigateur | ouvrir le devis `PROV1215` en français | titre exact `PROV1215 - Étude financière PV` |
+| Durée | horizons 1, 12, 20, 25, 30 et 50 ans | nombre exact de lignes, titres dynamiques, axes adaptés et réglage conservé par entité |
+| Durée | saisir 0 puis 51 ans dans les réglages | sauvegarde refusée avec message traduit |
+| Batterie absente | ouvrir une ancienne étude sans extrafields batterie | scénario sans batterie inchangé, comparaison indiquée non configurée |
+| Batterie partielle | renseigner uniquement le taux ou uniquement le surcoût | avertissement non bloquant, PDF et scénario sans batterie disponibles |
+| Batterie libre | renseigner taux et surcoût sans devis lié | investissement avec batterie = TTC courant + saisie libre |
+| Batterie liée | choisir un devis du même tiers, de la même entité et devise | Select2 affiche référence et réf. client ; TTC figé comme snapshot |
+| Batterie incompatible | tenter tiers, entité ou devise différents | proposition absente du Select2 et refus serveur si identifiant forgé |
+| Snapshot batterie | modifier le devis source puis enregistrer l’étude | snapshot inchangé avant l’action explicite d’actualisation |
+| Snapshot batterie | supprimer ou rendre inaccessible le devis source | snapshot conservé et avertissement visible dans l’onglet et les PDF |
+| Comparaison | taux batterie supérieur au taux sans batterie | surplus en baisse, économies en hausse et temps de retour distincts |
+| Badges | ouvrir synthèse et projection annuelle | badges de synthèse au format h2, badges annuels compacts, statut du devis inchangé |
+| PDF comparatif | générer les deux modèles à 12, 30 et 50 ans | légende, deux courbes, deux retours, tableaux multipages et pieds protégés |
+| Courbes proches | configurer deux retours voisins, non atteints puis de grande amplitude | repères décalés, libellés distincts et échelle commune lisible |
+| CSRF batterie | actualiser le snapshot avec puis sans token | action acceptée avec token et refusée sans token |
+| Multicompany batterie | deux entités avec devis et couleurs distincts | aucune fuite de devis, snapshots ou couleurs entre entités |
