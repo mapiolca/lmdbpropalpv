@@ -270,7 +270,7 @@ if ($editable && (int) $study['battery_proposal_id'] > 0) {
 }
 print '</table>';
 if ($editable) {
-	print '<script>jQuery(function () { var proposal = jQuery("#battery_proposal_id"); var amount = jQuery("#battery_extra_investment_ttc"); var refreshRow = jQuery("#lmdbpropalpv-refresh-battery-row"); var syncBatterySource = function () { var hasSource = String(proposal.val() || "") !== ""; amount.prop("readonly", hasSource); refreshRow.toggle(hasSource); }; proposal.on("change", syncBatterySource); syncBatterySource(); });</script>';
+	print '<script>jQuery(function () { var proposal = jQuery("#battery_proposal_id"); var amount = jQuery("#battery_extra_investment_ttc"); var refreshRow = jQuery("#lmdbpropalpv-refresh-battery-row"); var syncBatterySource = function () { var hasSource = parseInt(proposal.val() || "0", 10) > 0; amount.prop("readonly", hasSource); refreshRow.toggle(hasSource); }; proposal.on("change", syncBatterySource); syncBatterySource(); });</script>';
 }
 if ($study['battery_configured'] && !$study['battery_complete']) {
 	$batteryMissingLabels = array_map(static function ($key) use ($langs) { return $langs->trans($key); }, $study['battery_missing']);
@@ -528,15 +528,11 @@ function lmdbpropalpvScenarioLegend($withoutColor, $withColor)
 /** @return string */
 function lmdbpropalpvComparisonBadges($withoutValue, $withValue, $withoutColor, $withColor, $large = false)
 {
-	global $langs;
-
 	$sizeClass = $large ? ' lmdbpropalpv-scenario-badge-large' : '';
 	$html = '<span class="lmdbpropalpv-comparison-badges'.$sizeClass.'">';
-	$html .= lmdbpropalpvScenarioBadge($langs->trans('LmdbPropalPVWithoutBatteryShort'), $withoutValue, $withoutColor);
+	$html .= lmdbpropalpvScenarioBadge($withoutValue, $withoutColor);
 	if ($withValue !== null) {
-		$html .= lmdbpropalpvScenarioBadge($langs->trans('LmdbPropalPVWithBatteryShort'), $withValue, $withColor);
-	} else {
-		$html .= '<span class="lmdbpropalpv-scenario-badge lmdbpropalpv-scenario-badge-empty">'.dol_escape_htmltag($langs->trans('LmdbPropalPVWithBatteryShort')).' : '.dol_escape_htmltag($langs->trans('LmdbPropalPVNotConfigured')).'</span>';
+		$html .= lmdbpropalpvScenarioBadge($withValue, $withColor);
 	}
 	$html .= '</span>';
 
@@ -544,7 +540,7 @@ function lmdbpropalpvComparisonBadges($withoutValue, $withValue, $withoutColor, 
 }
 
 /** @return string */
-function lmdbpropalpvScenarioBadge($label, $value, $color)
+function lmdbpropalpvScenarioBadge($value, $color)
 {
 	$normalizedColor = preg_match('/^#[0-9A-Fa-f]{6}$/', (string) $color) ? (string) $color : '#16324F';
 	$red = hexdec(substr($normalizedColor, 1, 2));
@@ -553,7 +549,7 @@ function lmdbpropalpvScenarioBadge($label, $value, $color)
 	$textColor = (($red * 299 + $green * 587 + $blue * 114) / 1000) >= 150 ? '#111111' : '#FFFFFF';
 
 	return '<span class="lmdbpropalpv-scenario-badge" style="background-color:'.dol_escape_htmltag($normalizedColor).';color:'.$textColor.'">'
-		.dol_escape_htmltag((string) $label).' : '.dol_escape_htmltag((string) $value).'</span>';
+		.dol_escape_htmltag((string) $value).'</span>';
 }
 
 /** @return string */

@@ -444,11 +444,11 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$batteryResult = $study['battery_result'] instanceof LmdbPropalPVFinancialResult ? $study['battery_result'] : null;
 			$projectionYears = (int) $study['projection_years'];
 			$paybackWithout = $study['result']->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReachedAtYears', $projectionYears) : price(price2num($study['result']->paybackYears, 'MT'), 0, $outputlangs).' '.$outputlangs->transnoentities('LmdbPropalPVYears');
-			$paybackWith = $batteryResult !== null ? ($batteryResult->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReachedAtYears', $projectionYears) : price(price2num($batteryResult->paybackYears, 'MT'), 0, $outputlangs).' '.$outputlangs->transnoentities('LmdbPropalPVYears')) : $outputlangs->transnoentities('LmdbPropalPVNotConfigured');
-			$netGainWith = $batteryResult !== null ? price(price2num($batteryResult->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']) : $outputlangs->transnoentities('LmdbPropalPVNotConfigured');
+			$paybackWith = $batteryResult !== null ? ($batteryResult->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReachedAtYears', $projectionYears) : price(price2num($batteryResult->paybackYears, 'MT'), 0, $outputlangs).' '.$outputlangs->transnoentities('LmdbPropalPVYears')) : null;
+			$netGainWith = $batteryResult !== null ? price(price2num($batteryResult->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']) : null;
 			$battery = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $object->entity));
-			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 68, 148, $outputlangs->transnoentities('LmdbPropalPVPayback'), $paybackWithout, $paybackWith, $primary, $battery, $outputlangs);
-			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 130, 148, $outputlangs->transnoentities('LmdbPropalPVNetGainAtYears', $projectionYears), price(price2num($study['result']->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), $netGainWith, $primary, $battery, $outputlangs);
+			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 68, 148, $outputlangs->transnoentities('LmdbPropalPVPayback'), $paybackWithout, $paybackWith, $primary, $battery);
+			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 130, 148, $outputlangs->transnoentities('LmdbPropalPVNetGainAtYears', $projectionYears), price(price2num($study['result']->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), $netGainWith, $primary, $battery);
 		}
 
 		$pdf->SetTextColor(70, 70, 70);
@@ -592,7 +592,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 
 
 	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawCoverComparisonMetric($pdf, $x, $y, $label, $withoutValue, $withValue, array $primary, array $battery, $outputlangs)
+	private function drawCoverComparisonMetric($pdf, $x, $y, $label, $withoutValue, $withValue, array $primary, array $battery)
 	{
 		$pdf->SetTextColor(100, 100, 100);
 		$pdf->SetFont('', '', 7.5);
@@ -601,10 +601,12 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFont('', 'B', 7.2);
 		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
 		$pdf->SetXY($x, $y + 9);
-		$pdf->Cell(52, 4, $outputlangs->transnoentities('LmdbPropalPVWithoutBatteryShort').' : '.$withoutValue, 0, 0, 'L', false, '', 1);
-		$pdf->SetTextColor($battery[0], $battery[1], $battery[2]);
-		$pdf->SetXY($x, $y + 14);
-		$pdf->Cell(52, 4, $outputlangs->transnoentities('LmdbPropalPVWithBatteryShort').' : '.$withValue, 0, 0, 'L', false, '', 1);
+		$pdf->Cell(52, 4, $withoutValue, 0, 0, 'L', false, '', 1);
+		if ($withValue !== null) {
+			$pdf->SetTextColor($battery[0], $battery[1], $battery[2]);
+			$pdf->SetXY($x, $y + 14);
+			$pdf->Cell(52, 4, $withValue, 0, 0, 'L', false, '', 1);
+		}
 	}
 
 	/** @param array{0:int,1:int,2:int} $primary @return void */
@@ -709,8 +711,8 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->SetXY($x, 39.0);
 			$pdf->Cell(58.0, 5.0, $metric[0], 0, 0, 'L', false, '', 1);
 			$withoutValue = $this->formatPdfMetric($outputlangs, $metric[1], $metric[3], $study['currency_code'], $projectionYears);
-			$withValue = $batteryResult instanceof LmdbPropalPVFinancialResult ? $this->formatPdfMetric($outputlangs, $metric[2], $metric[3], $study['currency_code'], $projectionYears) : $outputlangs->transnoentities('LmdbPropalPVNotConfigured');
-			$this->drawPdfSummaryPair($pdf, $outputlangs, $x, 47.0, 58.0, $withoutValue, $withValue, $primary, $battery);
+			$withValue = $batteryResult instanceof LmdbPropalPVFinancialResult ? $this->formatPdfMetric($outputlangs, $metric[2], $metric[3], $study['currency_code'], $projectionYears) : null;
+			$this->drawPdfSummaryPair($pdf, $x, 47.0, 58.0, $withoutValue, $withValue, $primary, $battery);
 		}
 		$this->drawCashflowChart($pdf, $result, $batteryResult, $outputlangs, 12, 66, 185, 45, $primary, $battery);
 	}
@@ -783,8 +785,8 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		);
 		foreach ($pairs as $pairIndex => $pair) {
 			$without = $this->formatPdfMetric($outputlangs, $pair[0], $pair[2], '', 0);
-			$with = $pair[1] !== null ? $this->formatPdfMetric($outputlangs, $pair[1], $pair[2], '', 0) : $outputlangs->transnoentities('LmdbPropalPVNotConfigured');
-			$this->drawPdfComparisonCell($pdf, $outputlangs, $x, $y, $widths[3 + $pairIndex], 7.0, $without, $with, $primary, $battery);
+			$with = $pair[1] !== null ? $this->formatPdfMetric($outputlangs, $pair[1], $pair[2], '', 0) : null;
+			$this->drawPdfComparisonCell($pdf, $x, $y, $widths[3 + $pairIndex], 7.0, $without, $with, $primary, $battery);
 			$x += $widths[3 + $pairIndex];
 		}
 		$pdf->SetXY($x, $y);
@@ -798,33 +800,41 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		);
 		foreach ($remainingPairs as $pairIndex => $pair) {
 			$without = $this->formatPdfMetric($outputlangs, $pair[0], $pair[2], '', 0);
-			$with = $pair[1] !== null ? $this->formatPdfMetric($outputlangs, $pair[1], $pair[2], '', 0) : $outputlangs->transnoentities('LmdbPropalPVNotConfigured');
-			$this->drawPdfComparisonCell($pdf, $outputlangs, $x, $y, $widths[6 + $pairIndex], 7.0, $without, $with, $primary, $battery);
+			$with = $pair[1] !== null ? $this->formatPdfMetric($outputlangs, $pair[1], $pair[2], '', 0) : null;
+			$this->drawPdfComparisonCell($pdf, $x, $y, $widths[6 + $pairIndex], 7.0, $without, $with, $primary, $battery);
 			$x += $widths[6 + $pairIndex];
 		}
 	}
 
 	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawPdfComparisonCell($pdf, $outputlangs, $x, $y, $width, $height, $without, $with, array $primary, array $battery)
+	private function drawPdfComparisonCell($pdf, $x, $y, $width, $height, $without, $with, array $primary, array $battery)
 	{
-		$half = $height / 2.0;
 		$pdf->SetDrawColor(190, 195, 200);
 		$pdf->Rect($x, $y, $width, $height, 'D');
 		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
+		if ($with === null) {
+			$pdf->Rect($x + 0.5, $y + 0.4, $width - 1.0, $height - 0.8, 'F');
+			$pdf->SetFont('', 'B', 4.2);
+			$this->setPdfContrastTextColor($pdf, $primary);
+			$pdf->SetXY($x + 0.7, $y + 0.4);
+			$pdf->Cell($width - 1.4, $height - 0.8, $without, 0, 0, 'R', false, '', 1);
+			return;
+		}
+		$half = $height / 2.0;
 		$pdf->Rect($x + 0.5, $y + 0.4, $width - 1.0, $half - 0.5, 'F');
 		$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
 		$pdf->Rect($x + 0.5, $y + $half + 0.1, $width - 1.0, $half - 0.5, 'F');
-		$pdf->SetFont('', 'B', 3.8);
+		$pdf->SetFont('', 'B', 4.2);
 		$this->setPdfContrastTextColor($pdf, $primary);
 		$pdf->SetXY($x + 0.7, $y + 0.15);
-		$pdf->Cell($width - 1.4, $half - 0.2, $outputlangs->transnoentities('LmdbPropalPVWithoutBatteryShort').' '.$without, 0, 0, 'R', false, '', 1);
+		$pdf->Cell($width - 1.4, $half - 0.2, $without, 0, 0, 'R', false, '', 1);
 		$this->setPdfContrastTextColor($pdf, $battery);
 		$pdf->SetXY($x + 0.7, $y + $half - 0.05);
-		$pdf->Cell($width - 1.4, $half - 0.2, $outputlangs->transnoentities('LmdbPropalPVWithBatteryShort').' '.$with, 0, 0, 'R', false, '', 1);
+		$pdf->Cell($width - 1.4, $half - 0.2, $with, 0, 0, 'R', false, '', 1);
 	}
 
 	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawPdfSummaryPair($pdf, $outputlangs, $x, $y, $width, $without, $with, array $primary, array $battery)
+	private function drawPdfSummaryPair($pdf, $x, $y, $width, $without, $with, array $primary, array $battery)
 	{
 		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
 		if (method_exists($pdf, 'RoundedRect')) {
@@ -832,19 +842,21 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		} else {
 			$pdf->Rect($x, $y, $width, 6.0, 'F');
 		}
-		$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
-		if (method_exists($pdf, 'RoundedRect')) {
-			$pdf->RoundedRect($x, $y + 7.0, $width, 6.0, 1.0, '1111', 'F');
-		} else {
-			$pdf->Rect($x, $y + 7.0, $width, 6.0, 'F');
-		}
 		$pdf->SetFont('', 'B', 7.5);
 		$this->setPdfContrastTextColor($pdf, $primary);
 		$pdf->SetXY($x + 1.0, $y + 0.4);
-		$pdf->Cell($width - 2.0, 5.0, $outputlangs->transnoentities('LmdbPropalPVWithoutBatteryShort').' : '.$without, 0, 0, 'C', false, '', 1);
-		$this->setPdfContrastTextColor($pdf, $battery);
-		$pdf->SetXY($x + 1.0, $y + 7.4);
-		$pdf->Cell($width - 2.0, 5.0, $outputlangs->transnoentities('LmdbPropalPVWithBatteryShort').' : '.$with, 0, 0, 'C', false, '', 1);
+		$pdf->Cell($width - 2.0, 5.0, $without, 0, 0, 'C', false, '', 1);
+		if ($with !== null) {
+			$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
+			if (method_exists($pdf, 'RoundedRect')) {
+				$pdf->RoundedRect($x, $y + 7.0, $width, 6.0, 1.0, '1111', 'F');
+			} else {
+				$pdf->Rect($x, $y + 7.0, $width, 6.0, 'F');
+			}
+			$this->setPdfContrastTextColor($pdf, $battery);
+			$pdf->SetXY($x + 1.0, $y + 7.4);
+			$pdf->Cell($width - 2.0, 5.0, $with, 0, 0, 'C', false, '', 1);
+		}
 	}
 
 
