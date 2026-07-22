@@ -598,15 +598,18 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFont('', '', 7.5);
 		$pdf->SetXY($x, $y);
 		$pdf->MultiCell(52, 5, $label, 0, 'L');
-		$pdf->SetFont('', 'B', 7.2);
+		$pdf->SetFont('', 'B', $withValue !== null ? 6.4 : 7.2);
 		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
 		$pdf->SetXY($x, $y + 9);
-		$pdf->Cell(52, 4, $withoutValue, 0, 0, 'L', false, '', 1);
-		if ($withValue !== null) {
-			$pdf->SetTextColor($battery[0], $battery[1], $battery[2]);
-			$pdf->SetXY($x, $y + 14);
-			$pdf->Cell(52, 4, $withValue, 0, 0, 'L', false, '', 1);
+		if ($withValue === null) {
+			$pdf->Cell(52, 4, $withoutValue, 0, 0, 'L', false, '', 1);
+			return;
 		}
+		$halfWidth = 25.5;
+		$pdf->Cell($halfWidth, 4, $withoutValue, 0, 0, 'L', false, '', 1);
+		$pdf->SetTextColor($battery[0], $battery[1], $battery[2]);
+		$pdf->SetXY($x + $halfWidth + 1.0, $y + 9);
+		$pdf->Cell($halfWidth, 4, $withValue, 0, 0, 'L', false, '', 1);
 	}
 
 	/** @param array{0:int,1:int,2:int} $primary @return void */
@@ -820,43 +823,59 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->Cell($width - 1.4, $height - 0.8, $without, 0, 0, 'R', false, '', 1);
 			return;
 		}
-		$half = $height / 2.0;
-		$pdf->Rect($x + 0.5, $y + 0.4, $width - 1.0, $half - 0.5, 'F');
+		$gap = 0.3;
+		$badgeWidth = ($width - 1.0 - $gap) / 2.0;
+		$leftX = $x + 0.5;
+		$rightX = $leftX + $badgeWidth + $gap;
+		$pdf->Rect($leftX, $y + 0.4, $badgeWidth, $height - 0.8, 'F');
 		$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
-		$pdf->Rect($x + 0.5, $y + $half + 0.1, $width - 1.0, $half - 0.5, 'F');
-		$pdf->SetFont('', 'B', 4.2);
+		$pdf->Rect($rightX, $y + 0.4, $badgeWidth, $height - 0.8, 'F');
+		$pdf->SetFont('', 'B', 3.6);
 		$this->setPdfContrastTextColor($pdf, $primary);
-		$pdf->SetXY($x + 0.7, $y + 0.15);
-		$pdf->Cell($width - 1.4, $half - 0.2, $without, 0, 0, 'R', false, '', 1);
+		$pdf->SetXY($leftX + 0.2, $y + 0.4);
+		$pdf->Cell($badgeWidth - 0.4, $height - 0.8, $without, 0, 0, 'R', false, '', 1);
 		$this->setPdfContrastTextColor($pdf, $battery);
-		$pdf->SetXY($x + 0.7, $y + $half - 0.05);
-		$pdf->Cell($width - 1.4, $half - 0.2, $with, 0, 0, 'R', false, '', 1);
+		$pdf->SetXY($rightX + 0.2, $y + 0.4);
+		$pdf->Cell($badgeWidth - 0.4, $height - 0.8, $with, 0, 0, 'R', false, '', 1);
 	}
 
 	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
 	private function drawPdfSummaryPair($pdf, $x, $y, $width, $without, $with, array $primary, array $battery)
 	{
 		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
-		if (method_exists($pdf, 'RoundedRect')) {
-			$pdf->RoundedRect($x, $y, $width, 6.0, 1.0, '1111', 'F');
-		} else {
-			$pdf->Rect($x, $y, $width, 6.0, 'F');
-		}
-		$pdf->SetFont('', 'B', 7.5);
-		$this->setPdfContrastTextColor($pdf, $primary);
-		$pdf->SetXY($x + 1.0, $y + 0.4);
-		$pdf->Cell($width - 2.0, 5.0, $without, 0, 0, 'C', false, '', 1);
-		if ($with !== null) {
-			$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
+		if ($with === null) {
 			if (method_exists($pdf, 'RoundedRect')) {
-				$pdf->RoundedRect($x, $y + 7.0, $width, 6.0, 1.0, '1111', 'F');
+				$pdf->RoundedRect($x, $y, $width, 6.0, 1.0, '1111', 'F');
 			} else {
-				$pdf->Rect($x, $y + 7.0, $width, 6.0, 'F');
+				$pdf->Rect($x, $y, $width, 6.0, 'F');
 			}
-			$this->setPdfContrastTextColor($pdf, $battery);
-			$pdf->SetXY($x + 1.0, $y + 7.4);
-			$pdf->Cell($width - 2.0, 5.0, $with, 0, 0, 'C', false, '', 1);
+			$pdf->SetFont('', 'B', 7.5);
+			$this->setPdfContrastTextColor($pdf, $primary);
+			$pdf->SetXY($x + 1.0, $y + 0.4);
+			$pdf->Cell($width - 2.0, 5.0, $without, 0, 0, 'C', false, '', 1);
+			return;
 		}
+		$gap = 1.0;
+		$badgeWidth = ($width - $gap) / 2.0;
+		$rightX = $x + $badgeWidth + $gap;
+		if (method_exists($pdf, 'RoundedRect')) {
+			$pdf->RoundedRect($x, $y, $badgeWidth, 6.0, 1.0, '1111', 'F');
+		} else {
+			$pdf->Rect($x, $y, $badgeWidth, 6.0, 'F');
+		}
+		$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
+		if (method_exists($pdf, 'RoundedRect')) {
+			$pdf->RoundedRect($rightX, $y, $badgeWidth, 6.0, 1.0, '1111', 'F');
+		} else {
+			$pdf->Rect($rightX, $y, $badgeWidth, 6.0, 'F');
+		}
+		$pdf->SetFont('', 'B', 6.4);
+		$this->setPdfContrastTextColor($pdf, $primary);
+		$pdf->SetXY($x + 0.6, $y + 0.4);
+		$pdf->Cell($badgeWidth - 1.2, 5.0, $without, 0, 0, 'C', false, '', 1);
+		$this->setPdfContrastTextColor($pdf, $battery);
+		$pdf->SetXY($rightX + 0.6, $y + 0.4);
+		$pdf->Cell($badgeWidth - 1.2, 5.0, $with, 0, 0, 'C', false, '', 1);
 	}
 
 
