@@ -54,6 +54,7 @@ class modLmdbPropalPV extends DolibarrModules
 			array('LMDBPROPALPV_PROJECTION_YEARS', 'chaine', '20', 'Financial projection duration in years', 0, 'current', 0),
 			array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'chaine', '#16324F', 'Primary PDF color', 0, 'current', 0),
 			array('LMDBPROPALPV_PDF_ACCENT_COLOR', 'chaine', '#F2B705', 'Accent PDF color', 0, 'current', 0),
+			array('LMDBPROPALPV_WITHOUT_BATTERY_COLOR', 'chaine', '#16324F', 'Without-battery scenario color', 0, 'current', 0),
 			array('LMDBPROPALPV_BATTERY_COLOR', 'chaine', '#2E7D32', 'With-battery scenario color', 0, 'current', 0),
 			array('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'chaine', 'cyan', 'Proposal PDF model used as commercial body', 0, 'current', 0),
 			array('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'chaine', '', 'Optional financial disclaimer', 0, 'current', 0),
@@ -106,6 +107,9 @@ class modLmdbPropalPV extends DolibarrModules
 		if ($this->backfillFirstYearDegradation() < 0) {
 			return -1;
 		}
+		if ($this->initializeWithoutBatteryColor() < 0) {
+			return -1;
+		}
 
 		require_once dirname(__DIR__, 2).'/class/lmdbpropalpvtariffseed.class.php';
 		$seed = new LmdbPropalPVTariffSeed($this->db);
@@ -137,6 +141,26 @@ class modLmdbPropalPV extends DolibarrModules
 			return -1;
 		}
 		if ($initialPdfSetupRequired && dolibarr_set_const($this->db, 'LMDBPROPALPV_INITIAL_PDF_SETUP_DONE', '1', 'chaine', 0, '', (int) $conf->entity) <= 0) {
+			$this->error = $this->db->lasterror();
+			return -1;
+		}
+
+		return 1;
+	}
+
+	/** Initialize the dedicated scenario color without overwriting an existing choice. @return int */
+	private function initializeWithoutBatteryColor()
+	{
+		global $conf;
+
+		if (getDolGlobalString('LMDBPROPALPV_WITHOUT_BATTERY_COLOR') !== '') {
+			return 1;
+		}
+		$color = getDolGlobalString('LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F');
+		if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+			$color = '#16324F';
+		}
+		if (dolibarr_set_const($this->db, 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', strtoupper($color), 'chaine', 0, '', (int) $conf->entity) <= 0) {
 			$this->error = $this->db->lasterror();
 			return -1;
 		}

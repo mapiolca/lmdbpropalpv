@@ -204,7 +204,7 @@ foreach ($study['degradation_warning_keys'] as $warningKey) {
 }
 print '</div></div><div class="clearboth"></div><br>';
 
-$primaryColor = lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F', (int) $object->entity);
+$withoutBatteryColor = lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '#16324F', (int) $object->entity);
 $batteryColor = lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $object->entity);
 $batteryOptionsData = $service->getBatteryProposalOptions($object);
 $batterySelectOptions = array();
@@ -225,7 +225,7 @@ print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVAnnu
 lmdbpropalpvInputRow($form, 'annual_production_kwh', 'LmdbPropalPVAnnualProduction', $displayValues['annual_production_kwh'], ' kWh', $editable, 'LmdbPropalPVAnnualProductionHelp');
 print '</table></div>';
 
-print lmdbpropalpvScenarioLegend($primaryColor, $batteryColor);
+print lmdbpropalpvScenarioLegend($withoutBatteryColor, $batteryColor);
 print '<div class="fichecenter lmdbpropalpv-comparison-layout">';
 print '<div class="fichehalfleft"><table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVSelfConsumptionWithoutBattery').'</th></tr>';
@@ -365,7 +365,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 	$batteryResult = $study['battery_result'] instanceof LmdbPropalPVFinancialResult ? $study['battery_result'] : null;
 	$projectionYears = (int) $study['projection_years'];
 	print '<br>'.load_fiche_titre($langs->trans('LmdbPropalPVProjectionYearsTitle', $projectionYears), '', 'chart-area');
-	print lmdbpropalpvScenarioLegend($primaryColor, $batteryColor);
+	print lmdbpropalpvScenarioLegend($withoutBatteryColor, $batteryColor);
 	print '<div class="fichecenter"><div class="fichehalfleft"><table class="border centpercent">';
 	print '<tr><td class="titlefield">'.$langs->trans('LmdbPropalPVTotalProduction').'</td><td><strong>'.price(price2num($result->totalProductionKwh, 'MT')).' kWh</strong></td></tr>';
 	$leftMetrics = array(
@@ -378,7 +378,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 		if ($metricValues[2] === 'singlemoney') {
 			$metricDisplay = '<strong>'.price(price2num((float) $metricValues[0], 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']).'</strong>';
 		} else {
-			$metricDisplay = lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric((float) $metricValues[0], 'money', $study['currency_code']), $metricValues[1] !== null ? lmdbpropalpvFormatMetric((float) $metricValues[1], 'money', $study['currency_code']) : null, $primaryColor, $batteryColor, true);
+			$metricDisplay = lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric((float) $metricValues[0], 'money', $study['currency_code']), $metricValues[1] !== null ? lmdbpropalpvFormatMetric((float) $metricValues[1], 'money', $study['currency_code']) : null, $withoutBatteryColor, $batteryColor, true);
 		}
 		print '<tr><td class="titlefield">'.$langs->trans($metricLabel).'</td><td>'.$metricDisplay.'</td></tr>';
 	}
@@ -393,7 +393,7 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 	foreach ($rightMetrics as $metric) {
 		$withoutValue = lmdbpropalpvFormatMetric($metric[1], $metric[3], $study['currency_code'], $projectionYears);
 		$withValue = $batteryResult !== null ? lmdbpropalpvFormatMetric($metric[2], $metric[3], $study['currency_code'], $projectionYears) : null;
-		print '<tr><td class="titlefield">'.$metric[0].'</td><td>'.lmdbpropalpvComparisonBadges($withoutValue, $withValue, $primaryColor, $batteryColor, true).'</td></tr>';
+		print '<tr><td class="titlefield">'.$metric[0].'</td><td>'.lmdbpropalpvComparisonBadges($withoutValue, $withValue, $withoutBatteryColor, $batteryColor, true).'</td></tr>';
 	}
 	print '</table></div></div><div class="clearboth"></div><br>';
 	print lmdbpropalpvCashflowGraph($result, $batteryResult, $study['currency_code'], (int) $object->entity);
@@ -404,12 +404,12 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 		print '<tr class="oddeven"><td>'.((int) $year->year).'</td>';
 		print '<td class="right">'.price(price2num($year->productionKwh, 'MT')).'</td>';
 		print '<td class="right">'.price(price2num($year->retailPricePerKwh, 'MU')).'</td>';
-		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->surplusSale, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->surplusSale, 'money', $study['currency_code']) : null, $primaryColor, $batteryColor).'</td>';
-		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->electricitySavings, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->electricitySavings, 'money', $study['currency_code']) : null, $primaryColor, $batteryColor).'</td>';
+		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->surplusSale, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->surplusSale, 'money', $study['currency_code']) : null, $withoutBatteryColor, $batteryColor).'</td>';
+		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->electricitySavings, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->electricitySavings, 'money', $study['currency_code']) : null, $withoutBatteryColor, $batteryColor).'</td>';
 		print '<td class="right">'.price(price2num($year->premium, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']).'</td>';
-		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->annualGain, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->annualGain, 'money', $study['currency_code']) : null, $primaryColor, $batteryColor).'</td>';
-		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->cumulativeCashflow, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->cumulativeCashflow, 'money', $study['currency_code']) : null, $primaryColor, $batteryColor).'</td>';
-		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->annualReturnRate * 100.0, 'percent', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->annualReturnRate * 100.0, 'percent', $study['currency_code']) : null, $primaryColor, $batteryColor).'</td></tr>';
+		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->annualGain, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->annualGain, 'money', $study['currency_code']) : null, $withoutBatteryColor, $batteryColor).'</td>';
+		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->cumulativeCashflow, 'money', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->cumulativeCashflow, 'money', $study['currency_code']) : null, $withoutBatteryColor, $batteryColor).'</td>';
+		print '<td class="right">'.lmdbpropalpvComparisonBadges(lmdbpropalpvFormatMetric($year->annualReturnRate * 100.0, 'percent', $study['currency_code']), $batteryYear !== null ? lmdbpropalpvFormatMetric($batteryYear->annualReturnRate * 100.0, 'percent', $study['currency_code']) : null, $withoutBatteryColor, $batteryColor).'</td></tr>';
 	}
 	print '</table></div>';
 }
@@ -559,7 +559,7 @@ function lmdbpropalpvCashflowGraph(LmdbPropalPVFinancialResult $result, $battery
 
 	$projectionYears = max(1, (int) $result->projectionYears);
 	$series = array(
-		array('result' => $result, 'color' => lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F', (int) $entity), 'label' => $langs->trans('LmdbPropalPVWithoutBattery')),
+		array('result' => $result, 'color' => lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '#16324F', (int) $entity), 'label' => $langs->trans('LmdbPropalPVWithoutBattery')),
 	);
 	if ($batteryResult instanceof LmdbPropalPVFinancialResult) {
 		$series[] = array('result' => $batteryResult, 'color' => lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $entity), 'label' => $langs->trans('LmdbPropalPVWithBattery'));

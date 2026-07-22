@@ -48,7 +48,7 @@
 | Signature | devis validé avec signature en ligne active | URL native et QR code |
 | Signature | signature désactivée | bloc Bon pour accord |
 | Multicompany | deux entités avec couleurs et devis distincts | réglages et documents isolés |
-| Sélecteur de couleur | modifier les deux couleurs avec JavaScript activé puis avec `MAIN_USE_HTML5_COLOR_SELECTOR` actif | composant natif affiché, valeur sauvegardée en `#RRGGBB` et couleur reprise dans l’onglet et les PDF |
+| Sélecteur de couleur | modifier les quatre couleurs avec JavaScript activé puis avec `MAIN_USE_HTML5_COLOR_SELECTOR` actif | composant natif affiché, valeur sauvegardée en `#RRGGBB`, couleur principale conservée pour l’habillage du PDF et couleurs de scénario distinctes reprises dans l’onglet et les PDF |
 | Multicompany | produits MODULE partagés, caractéristiques et défauts différents | résolution conforme aux entités PowerPlantPV accessibles et défaut de l’entité propriétaire du devis |
 | Droits | administrateur sans droits fins | accès complet dans son périmètre |
 | Droits | lecture seule | consultation, aucune écriture |

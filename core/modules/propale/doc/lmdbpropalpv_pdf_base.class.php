@@ -378,6 +378,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 
 		$primary = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F', (int) $object->entity));
 		$accent = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_PDF_ACCENT_COLOR', '#F2B705', (int) $object->entity));
+		$withoutBattery = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '#16324F', (int) $object->entity));
 		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
 		$pdf->Rect(0, 0, $this->page_largeur, 76, 'F');
 		$pdf->SetFillColor($accent[0], $accent[1], $accent[2]);
@@ -447,8 +448,8 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$paybackWith = $batteryResult !== null ? ($batteryResult->paybackYears === null ? $outputlangs->transnoentities('LmdbPropalPVPaybackNotReachedAtYears', $projectionYears) : price(price2num($batteryResult->paybackYears, 'MT'), 0, $outputlangs).' '.$outputlangs->transnoentities('LmdbPropalPVYears')) : null;
 			$netGainWith = $batteryResult !== null ? price(price2num($batteryResult->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']) : null;
 			$battery = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $object->entity));
-			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 68, 148, $outputlangs->transnoentities('LmdbPropalPVPayback'), $paybackWithout, $paybackWith, $primary, $battery);
-			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 130, 148, $outputlangs->transnoentities('LmdbPropalPVNetGainAtYears', $projectionYears), price(price2num($study['result']->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), $netGainWith, $primary, $battery);
+			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 68, 148, $outputlangs->transnoentities('LmdbPropalPVPayback'), $paybackWithout, $paybackWith, $withoutBattery, $battery);
+			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 130, 148, $outputlangs->transnoentities('LmdbPropalPVNetGainAtYears', $projectionYears), price(price2num($study['result']->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), $netGainWith, $withoutBattery, $battery);
 		}
 
 		$pdf->SetTextColor(70, 70, 70);
@@ -591,15 +592,15 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	}
 
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawCoverComparisonMetric($pdf, $x, $y, $label, $withoutValue, $withValue, array $primary, array $battery)
+	/** @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawCoverComparisonMetric($pdf, $x, $y, $label, $withoutValue, $withValue, array $withoutBattery, array $battery)
 	{
 		$pdf->SetTextColor(100, 100, 100);
 		$pdf->SetFont('', '', 7.5);
 		$pdf->SetXY($x, $y);
 		$pdf->MultiCell(52, 5, $label, 0, 'L');
 		$pdf->SetFont('', 'B', $withValue !== null ? 6.4 : 7.2);
-		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetTextColor($withoutBattery[0], $withoutBattery[1], $withoutBattery[2]);
 		$pdf->SetXY($x, $y + 9);
 		if ($withValue === null) {
 			$pdf->Cell(52, 4, $withoutValue, 0, 0, 'L', false, '', 1);
@@ -645,6 +646,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	private function drawFinancialPages($pdf, $object, $outputlangs, array $study, LmdbPropalPVFinancialResult $result)
 	{
 		$primary = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_PDF_PRIMARY_COLOR', '#16324F', (int) $object->entity));
+		$withoutBattery = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '#16324F', (int) $object->entity));
 		$battery = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $object->entity));
 		$batteryResult = $study['battery_result'] instanceof LmdbPropalPVFinancialResult ? $study['battery_result'] : null;
 		$totalRows = count($result->years);
@@ -661,11 +663,11 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$firstPage = $pageIndex === 0;
 			$currentProjectionPage = $pageIndex + 1;
 			if ($firstPage) {
-				$this->drawFinancialHeader($pdf, $object, $outputlangs, $study, $result, $batteryResult, $primary, $battery, $currentProjectionPage, $totalProjectionPages);
+				$this->drawFinancialHeader($pdf, $object, $outputlangs, $study, $result, $batteryResult, $primary, $withoutBattery, $battery, $currentProjectionPage, $totalProjectionPages);
 				$tableY = 118.0;
 				$pageCapacity = 18;
 			} else {
-				$this->drawFinancialContinuationHeader($pdf, $outputlangs, (int) $study['projection_years'], $primary, $battery, $currentProjectionPage, $totalProjectionPages);
+				$this->drawFinancialContinuationHeader($pdf, $outputlangs, (int) $study['projection_years'], $primary, $withoutBattery, $battery, $currentProjectionPage, $totalProjectionPages);
 				$tableY = 42.0;
 				$pageCapacity = 28;
 			}
@@ -674,7 +676,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			for ($rowIndex = 0; $rowIndex < $rowsOnPage; $rowIndex++) {
 				$absoluteIndex = $offset + $rowIndex;
 				$batteryYear = $batteryResult !== null && isset($batteryResult->years[$absoluteIndex]) ? $batteryResult->years[$absoluteIndex] : null;
-				$this->drawFinancialTableRow($pdf, $outputlangs, $result->years[$absoluteIndex], $batteryYear, $tableY, $primary, $battery, $tableRowHeight);
+				$this->drawFinancialTableRow($pdf, $outputlangs, $result->years[$absoluteIndex], $batteryYear, $tableY, $withoutBattery, $battery, $tableRowHeight);
 				$tableY += $tableRowHeight;
 			}
 			$offset += $rowsOnPage;
@@ -689,18 +691,18 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 
 		if (!$notesDrawn) {
 			$this->addProtectedPage($pdf, $object, true);
-			$this->drawFinancialContinuationHeader($pdf, $outputlangs, (int) $study['projection_years'], $primary, $battery, $pageIndex + 1, $totalProjectionPages);
+			$this->drawFinancialContinuationHeader($pdf, $outputlangs, (int) $study['projection_years'], $primary, $withoutBattery, $battery, $pageIndex + 1, $totalProjectionPages);
 			$this->drawFinancialNotes($pdf, $object, $outputlangs, $study, 46.0);
 			$this->drawProtectedFooter($pdf, $object, $outputlangs, true);
 		}
 	}
 
-	/** @param array<string,mixed> $study @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawFinancialHeader($pdf, $object, $outputlangs, array $study, LmdbPropalPVFinancialResult $result, $batteryResult, array $primary, array $battery, $currentPage, $totalPages)
+	/** @param array<string,mixed> $study @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawFinancialHeader($pdf, $object, $outputlangs, array $study, LmdbPropalPVFinancialResult $result, $batteryResult, array $primary, array $withoutBattery, array $battery, $currentPage, $totalPages)
 	{
 		$projectionYears = (int) $study['projection_years'];
 		$this->drawFinancialPageTitle($pdf, $outputlangs, $projectionYears, $currentPage, $totalPages, $primary);
-		$this->drawPdfLegend($pdf, $outputlangs, 12.0, 31.0, $primary, $battery);
+		$this->drawPdfLegend($pdf, $outputlangs, 12.0, 31.0, $withoutBattery, $battery);
 		$metrics = array(
 			array($outputlangs->transnoentities('LmdbPropalPVNetGainAtYears', $projectionYears), $result->netGain, $batteryResult instanceof LmdbPropalPVFinancialResult ? $batteryResult->netGain : null, 'money'),
 			array($outputlangs->transnoentities('LmdbPropalPVROIAtYears', $projectionYears), $result->roiRate * 100.0, $batteryResult instanceof LmdbPropalPVFinancialResult ? $batteryResult->roiRate * 100.0 : null, 'percent'),
@@ -714,16 +716,16 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->Cell(58.0, 5.0, $metric[0], 0, 0, 'L', false, '', 1);
 			$withoutValue = $this->formatPdfMetric($outputlangs, $metric[1], $metric[3], $study['currency_code'], $projectionYears);
 			$withValue = $batteryResult instanceof LmdbPropalPVFinancialResult ? $this->formatPdfMetric($outputlangs, $metric[2], $metric[3], $study['currency_code'], $projectionYears) : null;
-			$this->drawPdfSummaryPair($pdf, $x, 47.0, 58.0, $withoutValue, $withValue, $primary, $battery);
+			$this->drawPdfSummaryPair($pdf, $x, 47.0, 58.0, $withoutValue, $withValue, $withoutBattery, $battery);
 		}
-		$this->drawCashflowChart($pdf, $result, $batteryResult, $outputlangs, 12, 66, 185, 45, $primary, $battery);
+		$this->drawCashflowChart($pdf, $result, $batteryResult, $outputlangs, 12, 66, 185, 45, $withoutBattery, $battery);
 	}
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawFinancialContinuationHeader($pdf, $outputlangs, $projectionYears, array $primary, array $battery, $currentPage, $totalPages)
+	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawFinancialContinuationHeader($pdf, $outputlangs, $projectionYears, array $primary, array $withoutBattery, array $battery, $currentPage, $totalPages)
 	{
 		$this->drawFinancialPageTitle($pdf, $outputlangs, (int) $projectionYears, $currentPage, $totalPages, $primary);
-		$this->drawPdfLegend($pdf, $outputlangs, 12.0, 31.0, $primary, $battery);
+		$this->drawPdfLegend($pdf, $outputlangs, 12.0, 31.0, $withoutBattery, $battery);
 	}
 
 	/** @param array{0:int,1:int,2:int} $primary @return void */
@@ -761,11 +763,11 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		return $tablePages + ($lastTableY > 190.0 ? 1 : 0);
 	}
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawPdfLegend($pdf, $outputlangs, $x, $y, array $primary, array $battery)
+	/** @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawPdfLegend($pdf, $outputlangs, $x, $y, array $withoutBattery, array $battery)
 	{
 		$pdf->SetFont('', 'B', 6.8);
-		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetFillColor($withoutBattery[0], $withoutBattery[1], $withoutBattery[2]);
 		$pdf->Rect($x, $y + 1.0, 7.0, 2.0, 'F');
 		$pdf->SetTextColor(55, 55, 55);
 		$pdf->SetXY($x + 9.0, $y);
@@ -832,8 +834,8 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		return $y + (float) $height;
 	}
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawFinancialTableRow($pdf, $outputlangs, LmdbPropalPVFinancialYear $year, $batteryYear, $y, array $primary, array $battery, $height)
+	/** @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawFinancialTableRow($pdf, $outputlangs, LmdbPropalPVFinancialYear $year, $batteryYear, $y, array $withoutBattery, array $battery, $height)
 	{
 		$widths = $this->getFinancialTableWidths();
 		$common = array(
@@ -856,7 +858,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		foreach ($pairs as $pairIndex => $pair) {
 			$without = $this->formatPdfMetric($outputlangs, $pair[0], $pair[2], '', 0);
 			$with = $pair[1] !== null ? $this->formatPdfMetric($outputlangs, $pair[1], $pair[2], '', 0) : null;
-			$this->drawPdfComparisonCell($pdf, $x, $y, $widths[3 + $pairIndex], (float) $height, $without, $with, $primary, $battery);
+			$this->drawPdfComparisonCell($pdf, $x, $y, $widths[3 + $pairIndex], (float) $height, $without, $with, $withoutBattery, $battery);
 			$x += $widths[3 + $pairIndex];
 		}
 		$pdf->SetXY($x, $y);
@@ -871,21 +873,21 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		foreach ($remainingPairs as $pairIndex => $pair) {
 			$without = $this->formatPdfMetric($outputlangs, $pair[0], $pair[2], '', 0);
 			$with = $pair[1] !== null ? $this->formatPdfMetric($outputlangs, $pair[1], $pair[2], '', 0) : null;
-			$this->drawPdfComparisonCell($pdf, $x, $y, $widths[6 + $pairIndex], (float) $height, $without, $with, $primary, $battery);
+			$this->drawPdfComparisonCell($pdf, $x, $y, $widths[6 + $pairIndex], (float) $height, $without, $with, $withoutBattery, $battery);
 			$x += $widths[6 + $pairIndex];
 		}
 	}
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawPdfComparisonCell($pdf, $x, $y, $width, $height, $without, $with, array $primary, array $battery)
+	/** @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawPdfComparisonCell($pdf, $x, $y, $width, $height, $without, $with, array $withoutBattery, array $battery)
 	{
 		$pdf->SetDrawColor(190, 195, 200);
 		$pdf->Rect($x, $y, $width, $height, 'D');
-		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetFillColor($withoutBattery[0], $withoutBattery[1], $withoutBattery[2]);
 		if ($with === null) {
 			$pdf->Rect($x + 0.5, $y + 0.4, $width - 1.0, $height - 0.8, 'F');
 			$pdf->SetFont('', 'B', 5.3);
-			$this->setPdfContrastTextColor($pdf, $primary);
+			$this->setPdfContrastTextColor($pdf, $withoutBattery);
 			$pdf->SetXY($x + 0.7, $y + 0.4);
 			$pdf->Cell($width - 1.4, $height - 0.8, $without, 0, 0, 'R', false, '', 1);
 			return;
@@ -898,7 +900,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
 		$pdf->Rect($rightX, $y + 0.4, $badgeWidth, $height - 0.8, 'F');
 		$pdf->SetFont('', 'B', 5.3);
-		$this->setPdfContrastTextColor($pdf, $primary);
+		$this->setPdfContrastTextColor($pdf, $withoutBattery);
 		$pdf->SetXY($leftX + 0.2, $y + 0.4);
 		$pdf->Cell($badgeWidth - 0.4, $height - 0.8, $without, 0, 0, 'R', false, '', 1);
 		$this->setPdfContrastTextColor($pdf, $battery);
@@ -906,10 +908,10 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->Cell($badgeWidth - 0.4, $height - 0.8, $with, 0, 0, 'R', false, '', 1);
 	}
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawPdfSummaryPair($pdf, $x, $y, $width, $without, $with, array $primary, array $battery)
+	/** @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawPdfSummaryPair($pdf, $x, $y, $width, $without, $with, array $withoutBattery, array $battery)
 	{
-		$pdf->SetFillColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetFillColor($withoutBattery[0], $withoutBattery[1], $withoutBattery[2]);
 		if ($with === null) {
 			if (method_exists($pdf, 'RoundedRect')) {
 				$pdf->RoundedRect($x, $y, $width, 6.0, 1.0, '1111', 'F');
@@ -917,7 +919,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 				$pdf->Rect($x, $y, $width, 6.0, 'F');
 			}
 			$pdf->SetFont('', 'B', 7.5);
-			$this->setPdfContrastTextColor($pdf, $primary);
+			$this->setPdfContrastTextColor($pdf, $withoutBattery);
 			$pdf->SetXY($x + 1.0, $y + 0.4);
 			$pdf->Cell($width - 2.0, 5.0, $without, 0, 0, 'C', false, '', 1);
 			return;
@@ -937,7 +939,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->Rect($rightX, $y, $badgeWidth, 6.0, 'F');
 		}
 		$pdf->SetFont('', 'B', 6.4);
-		$this->setPdfContrastTextColor($pdf, $primary);
+		$this->setPdfContrastTextColor($pdf, $withoutBattery);
 		$pdf->SetXY($x + 0.6, $y + 0.4);
 		$pdf->Cell($badgeWidth - 1.2, 5.0, $without, 0, 0, 'C', false, '', 1);
 		$this->setPdfContrastTextColor($pdf, $battery);
@@ -1001,11 +1003,11 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		}
 	}
 
-	/** @param array{0:int,1:int,2:int} $primary @param array{0:int,1:int,2:int} $battery @return void */
-	private function drawCashflowChart($pdf, LmdbPropalPVFinancialResult $result, $batteryResult, $outputlangs, $x, $y, $width, $height, array $primary, array $battery)
+	/** @param array{0:int,1:int,2:int} $withoutBattery @param array{0:int,1:int,2:int} $battery @return void */
+	private function drawCashflowChart($pdf, LmdbPropalPVFinancialResult $result, $batteryResult, $outputlangs, $x, $y, $width, $height, array $withoutBattery, array $battery)
 	{
 		$projectionYears = max(1, (int) $result->projectionYears);
-		$series = array(array($result, $primary, 'LmdbPropalPVWithoutBatteryShort'));
+		$series = array(array($result, $withoutBattery, 'LmdbPropalPVWithoutBatteryShort'));
 		if ($batteryResult instanceof LmdbPropalPVFinancialResult) {
 			$series[] = array($batteryResult, $battery, 'LmdbPropalPVWithBatteryShort');
 		}

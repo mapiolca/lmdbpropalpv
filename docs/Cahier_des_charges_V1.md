@@ -151,7 +151,7 @@ Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv
 
 La variante illustrée active uniquement la mécanique native de photos produits. Elle ne crée aucun stockage parallèle. La variante épurée désactive la colonne image.
 
-La couverture affiche le logo de l’entité, le client, la référence, la date, le total TTC et les indicateurs PV. Trois couleurs sont configurables par entité avec le sélecteur natif Dolibarr : scénario sans batterie `#16324F`, accent solaire `#F2B705` et scénario avec batterie `#2E7D32`. Les libellés accompagnent toujours les couleurs.
+La couverture affiche le logo de l’entité, le client, la référence, la date, le total TTC et les indicateurs PV. Quatre couleurs indépendantes sont configurables par entité avec le sélecteur natif Dolibarr : couleur principale du PDF `#16324F`, accent solaire `#F2B705`, scénario sans batterie `#16324F` et scénario avec batterie `#2E7D32`. Les libellés accompagnent toujours les couleurs.
 
 Si `PROPOSAL_ALLOW_ONLINESIGN` est actif et le devis validé, l’URL est construite par `getOnlineSignatureUrl()` et encodée dans un QR code natif TCPDF. Sinon, une zone « Bon pour accord » est affichée.
 
@@ -172,7 +172,7 @@ Le message d’activation explique ce comportement avant l’action administrate
 
 ## 9. Administration et droits
 
-La durée de projection de 1 à 50 ans et la couleur batterie sont des constantes par entité, modifiables uniquement par un administrateur.
+La durée de projection de 1 à 50 ans, la couleur principale du PDF, l’accent solaire et les deux couleurs de scénario sont des constantes par entité, modifiables uniquement par un administrateur.
 
 Les réglages internes sont `setup.php`, `tariffs.php`, `compatibility.php` et `about.php`. Seul `setup.php@lmdbpropalpv` est déclaré dans `config_page_url`.
 

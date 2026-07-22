@@ -24,6 +24,7 @@ if ($action === 'save') {
 	}
 	$primaryColor = strtoupper(GETPOST('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'alphanohtml'));
 	$accentColor = strtoupper(GETPOST('LMDBPROPALPV_PDF_ACCENT_COLOR', 'alphanohtml'));
+	$withoutBatteryColor = strtoupper(GETPOST('LMDBPROPALPV_WITHOUT_BATTERY_COLOR', 'alphanohtml'));
 	$batteryColor = strtoupper(GETPOST('LMDBPROPALPV_BATTERY_COLOR', 'alphanohtml'));
 	$projectionYears = GETPOSTINT('LMDBPROPALPV_PROJECTION_YEARS');
 	if ($primaryColor !== '' && substr($primaryColor, 0, 1) !== '#') {
@@ -31,6 +32,9 @@ if ($action === 'save') {
 	}
 	if ($accentColor !== '' && substr($accentColor, 0, 1) !== '#') {
 		$accentColor = '#'.$accentColor;
+	}
+	if ($withoutBatteryColor !== '' && substr($withoutBatteryColor, 0, 1) !== '#') {
+		$withoutBatteryColor = '#'.$withoutBatteryColor;
 	}
 	if ($batteryColor !== '' && substr($batteryColor, 0, 1) !== '#') {
 		$batteryColor = '#'.$batteryColor;
@@ -45,6 +49,7 @@ if ($action === 'save') {
 		'LMDBPROPALPV_PROJECTION_YEARS' => (string) $projectionYears,
 		'LMDBPROPALPV_PDF_PRIMARY_COLOR' => $primaryColor,
 		'LMDBPROPALPV_PDF_ACCENT_COLOR' => $accentColor,
+		'LMDBPROPALPV_WITHOUT_BATTERY_COLOR' => $withoutBatteryColor,
 		'LMDBPROPALPV_BATTERY_COLOR' => $batteryColor,
 		'LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL' => GETPOST('LMDBPROPALPV_BASE_PROPOSAL_PDF_MODEL', 'aZ09'),
 		'LMDBPROPALPV_FINANCIAL_DISCLAIMER' => GETPOST('LMDBPROPALPV_FINANCIAL_DISCLAIMER', 'restricthtml'),
@@ -80,7 +85,7 @@ if ($action === 'save') {
 		setEventMessages($langs->trans('LmdbPropalPVInvalidBaseProposalModel'), null, 'errors');
 		$error++;
 	}
-	foreach (array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LMDBPROPALPV_PDF_ACCENT_COLOR', 'LMDBPROPALPV_BATTERY_COLOR') as $colorName) {
+	foreach (array('LMDBPROPALPV_PDF_PRIMARY_COLOR', 'LMDBPROPALPV_PDF_ACCENT_COLOR', 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', 'LMDBPROPALPV_BATTERY_COLOR') as $colorName) {
 		if (!preg_match('/^#[0-9A-F]{6}$/', $values[$colorName])) {
 			setEventMessages($langs->trans('LmdbPropalPVInvalidColor', $colorName), null, 'errors');
 			$error++;
@@ -155,6 +160,9 @@ print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_PDF_PRIMARY_COLOR
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPdfAccentColor').'</td><td>';
 print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_PDF_ACCENT_COLOR', '#F2B705'), 'LMDBPROPALPV_PDF_ACCENT_COLOR', '', 1, array(), 'maxwidth100', '', '#F2B705');
+print '</td></tr>';
+print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVWithoutBatteryColor').'</td><td>';
+print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '#16324F'), 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '', 1, array(), 'maxwidth100', '', '#16324F');
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVBatteryColor').'</td><td>';
 print $formother->selectColor(getDolGlobalString('LMDBPROPALPV_BATTERY_COLOR', '#2E7D32'), 'LMDBPROPALPV_BATTERY_COLOR', '', 1, array(), 'maxwidth100', '', '#2E7D32');
