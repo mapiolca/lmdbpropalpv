@@ -410,7 +410,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetXY($this->marge_gauche, 61);
 		$pdf->Cell(120, 6, $outputlangs->convToOutputCharset($object->ref), 0, 0, 'L');
 
-		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetTextColor(0, 0, 0);
 		$pdf->SetFont('', 'B', 16);
 		$pdf->SetXY($this->marge_gauche, 94);
 		$customerName = is_object($object->thirdparty) ? $object->thirdparty->name : '';
@@ -450,6 +450,9 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$battery = $this->hexToRgb(lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $object->entity));
 			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 68, 148, $outputlangs->transnoentities('LmdbPropalPVPayback'), $paybackWithout, $paybackWith, $withoutBattery, $battery);
 			$this->drawCoverComparisonMetric($pdf, $this->marge_gauche + 130, 148, $outputlangs->transnoentities('LmdbPropalPVNetGainAtYears', $projectionYears), price(price2num($study['result']->netGain, 'MT'), 0, $outputlangs, 1, -1, -1, $study['currency_code']), $netGainWith, $withoutBattery, $battery);
+			if ($batteryResult !== null) {
+				$this->drawPdfLegend($pdf, $outputlangs, $this->marge_gauche + 68, 172, $withoutBattery, $battery);
+			}
 		}
 
 		$pdf->SetTextColor(70, 70, 70);
@@ -532,7 +535,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFont('', 'B', 20);
 		$pdf->SetXY($this->marge_gauche, 12);
 		$pdf->Cell(185, 8, $outputlangs->transnoentities('LmdbPropalPVGoodForAgreement'), 0, 0, 'L');
-		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetTextColor(0, 0, 0);
 		$pdf->SetFont('', 'B', 13);
 		$pdf->SetXY($this->marge_gauche, 55);
 		$pdf->Cell(120, 7, $outputlangs->transnoentities('Proposal').' '.$object->ref, 0, 0, 'L');
@@ -586,9 +589,9 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetXY($x, $y);
 		$pdf->MultiCell(52, 5, $label, 0, 'L');
 		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
-		$pdf->SetFont('', 'B', 12);
-		$pdf->SetXY($x, $y + 10);
-		$pdf->MultiCell(52, 7, $value, 0, 'L');
+		$pdf->SetFont('', 'B', 8);
+		$pdf->SetXY($x, $y + 9);
+		$pdf->MultiCell(52, 5, $value, 0, 'L');
 	}
 
 
@@ -596,10 +599,10 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	private function drawCoverComparisonMetric($pdf, $x, $y, $label, $withoutValue, $withValue, array $withoutBattery, array $battery)
 	{
 		$pdf->SetTextColor(100, 100, 100);
-		$pdf->SetFont('', '', 7.5);
+		$pdf->SetFont('', '', 8);
 		$pdf->SetXY($x, $y);
 		$pdf->MultiCell(52, 5, $label, 0, 'L');
-		$pdf->SetFont('', 'B', $withValue !== null ? 6.4 : 7.2);
+		$pdf->SetFont('', 'B', 8);
 		$pdf->SetTextColor($withoutBattery[0], $withoutBattery[1], $withoutBattery[2]);
 		$pdf->SetXY($x, $y + 9);
 		if ($withValue === null) {
@@ -622,7 +625,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		} else {
 			$pdf->Rect($this->marge_gauche, 105, 185, 85, 'D');
 		}
-		$pdf->SetTextColor($primary[0], $primary[1], $primary[2]);
+		$pdf->SetTextColor(0, 0, 0);
 		$pdf->SetFont('', 'B', 10);
 		$pdf->SetXY($this->marge_gauche + 4, 112);
 		$pdf->Cell(60, 5, $outputlangs->transnoentities('LmdbPropalPVGoodForAgreement'), 0, 0, 'L');
@@ -769,7 +772,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFont('', 'B', 6.8);
 		$pdf->SetFillColor($withoutBattery[0], $withoutBattery[1], $withoutBattery[2]);
 		$pdf->Rect($x, $y + 1.0, 7.0, 2.0, 'F');
-		$pdf->SetTextColor(55, 55, 55);
+		$pdf->SetTextColor(0, 0, 0);
 		$pdf->SetXY($x + 9.0, $y);
 		$pdf->Cell(45.0, 4.0, $outputlangs->transnoentities('LmdbPropalPVWithoutBattery'), 0, 0, 'L');
 		$pdf->SetFillColor($battery[0], $battery[1], $battery[2]);
