@@ -505,7 +505,7 @@ function lmdbpropalpvFormatMetric($value, $type, $currencyCode, $projectionYears
 		return price(price2num((float) $value, 'MT')).' %';
 	}
 	if ($type === 'cost') {
-		return price(price2num((float) $value, 'MU')).' '.$currencyCode.'/kWh';
+		return price(price2num((float) $value, 'MU'), 0, $langs, 1, 3, 3).' '.$currencyCode.'/kWh';
 	}
 
 	return price(price2num((float) $value, 'MT'), 0, $langs, 1, -1, -1, $currencyCode);
