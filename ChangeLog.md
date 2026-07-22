@@ -5,7 +5,7 @@
 - Première version de l’étude financière photovoltaïque sur 20 ans.
 - Moteur pur sans arrondi intermédiaire, temps de retour interpolé, ROI, rendement moyen et coût simplifié.
 - Dégradations distinctes en première année et à partir de l’année 2, proposées depuis les modules PowerPlantPV par moyenne pondérée sur la puissance et enregistrées comme snapshots rechargeables.
-- Montants, durées et pourcentages normalisés selon les décimales totales Dolibarr, avec graphiques enrichis des graduations et repères d’amortissement.
+- Montants, durées et pourcentages normalisés selon les décimales totales Dolibarr, avec temps de retour affiché dans un badge bleu natif et libellé placé au-dessus de la courbe sur les graphiques.
 - Projection annuelle normalisée selon les décimales totales, à l’exception de la colonne « Prix réseau » qui conserve la précision des prix unitaires.
 - Puissances souscrites du Tarif Jaune prises en charge de 37 à 250 kVA, par pas de 1 kVA, dans les réglages, les études et les barèmes personnalisés.
 - Contrôle indicatif de raccordement selon la Pmax Enedis, caractéristiques AC et phases des onduleurs PowerPlantPV, suggestion de puissance souscrite et alertes non bloquantes dans l’onglet et les deux PDF.
@@ -20,5 +20,5 @@
 - Première activation conservatrice, réglages par entité, droits granulaires et compatibilité Multicompany.
 - Correction du chargement de la bibliothèque native des propositions commerciales sur Dolibarr v20+.
 - Sécurisation de la mesure et du rendu des pieds de page TCPDF afin d’éviter les pages vides de pied lors de la génération du supplément PDF.
-- Pagination PDF globale après composition, incluant le corps commercial, les pages PV et les annexes activées par les options natives de CGV et de fiches produits.
+- Pagination PDF globale après composition, incluant le corps commercial, les pages PV et les annexes activées par les options natives de CGV et de fiches produits, sans page blanche provoquée par le marquage du pied.
 - Documentation fonctionnelle, paquet de prompts et matrice de tests manuels.

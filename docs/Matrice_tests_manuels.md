@@ -14,6 +14,7 @@
 | Hypothèses | enregistrer l’étude puis modifier les valeurs par défaut de l’entité | le devis conserve son instantané |
 | Complétude | production absente | liste du champ manquant, aucune page financière PDF |
 | Bannière et statut | fiche Proposition commerciale puis onglet Étude financière | mêmes référence client, tiers et projet ; ligne `Statut` dans le `fichehalfright` avec badge Dolibarr lisible |
+| Indicateur de retour | étude complète avec amortissement atteint | valeur du temps de retour normalisée selon les décimales totales et affichée dans un badge bleu natif |
 | État | devis validé | formulaire entièrement consultatif |
 | S21 | puissances 3, 9, 9,01, 36, 36,01 et 100 kWc | tranche correcte sans trou |
 | S21 | 5 juin 2026 | prime nulle et vente à 0,011 €/kWh |
@@ -38,11 +39,11 @@
 | Modèles PDF | ouvrir l’administration native en français puis en anglais | noms traduits « PV Signature illustré/épuré » et équivalents anglais, identifiants techniques inchangés |
 | Métadonnées PDF | mettre à jour une installation contenant les anciennes lignes avec `description` renseignée | libellés traduits visibles, `description` vidée, aucun modèle désactivé ou réactivé et modèle par défaut inchangé |
 | Corps commercial configurable | sélectionner successivement Cyan puis un autre modèle PDF actif dans chaque entité | le corps commercial provient du modèle choisi et les pages PV sont assemblées autour de celui-ci |
-| Pagination PDF globale | générer un devis dont le corps commercial comporte plusieurs pages | numérotation continue de `1 / N` à `N / N`, sans reprise du compteur du corps commercial ou du supplément PV |
+| Pagination PDF globale | générer un devis dont le corps commercial comporte plusieurs pages | exactement N pages, sans page blanche de pagination, et numérotation continue de `1 / N` à `N / N`, sans reprise du compteur du corps commercial ou du supplément PV |
 | Annexes PDF | activer puis désactiver séparément l’intégration des CGV et des fiches produits du modèle commercial | seules les annexes configurées sont présentes et chaque page ajoutée est incluse dans le total de la pagination globale |
 | Corps commercial indisponible | désactiver après configuration le modèle commercial sélectionné puis générer | repli contrôlé sur Cyan, sans récursion ni erreur fatale |
 | Graphiques | étude avec amortissement atteint | ligne horizontale jusqu’au point zéro et verticale jusqu’à l’axe des années dans l’onglet et le PDF |
-| Graphique PDF | valeurs négatives et positives sur 20 ans | graduations de trésorerie et d’années lisibles, courbe non tronquée |
+| Graphiques onglet et PDF | valeurs négatives et positives sur 20 ans | graduations lisibles, repères d’amortissement visibles et libellé du temps de retour placé au-dessus de la courbe sans la chevaucher |
 | Décimales | modifier `MAIN_MAX_DECIMALS_TOT` puis régénérer | toutes les données de la projection suivent la précision totale dans l’onglet et les PDF, sauf « Prix réseau » qui suit la précision unitaire |
 | Signature | devis validé avec signature en ligne active | URL native et QR code |
 | Signature | signature désactivée | bloc Bon pour accord |

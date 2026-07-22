@@ -683,6 +683,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->Cell(8.0, 3.0, (string) $year, 0, 0, 'C');
 		}
 		$zeroY = $plotY + $plotHeight - ((0.0 - $min) / $span) * $plotHeight;
+		$paybackX = null;
 		if ($result->paybackYears !== null) {
 			$paybackX = $plotX + ($result->paybackYears / 20.0) * $plotWidth;
 			if (method_exists($pdf, 'SetLineStyle')) {
@@ -692,10 +693,6 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			}
 			$pdf->Line($plotX, $zeroY, $paybackX, $zeroY);
 			$pdf->Line($paybackX, $zeroY, $paybackX, $plotY + $plotHeight);
-			$pdf->SetFillColor($accent[0], $accent[1], $accent[2]);
-			if (method_exists($pdf, 'Circle')) {
-				$pdf->Circle($paybackX, $zeroY, 1.2, 0, 360, 'F');
-			}
 		}
 		if (method_exists($pdf, 'SetLineStyle')) {
 			$pdf->SetLineStyle(array('width' => 0.55, 'dash' => 0, 'color' => $primary));
@@ -716,6 +713,32 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFillColor($accent[0], $accent[1], $accent[2]);
 		if (method_exists($pdf, 'Circle')) {
 			$pdf->Circle($previousX, $previousY, 1.3, 0, 360, 'F');
+		}
+		if ($paybackX !== null && $result->paybackYears !== null) {
+			// Draw the marker and its label after the curve so both stay legible.
+			$pdf->SetFillColor($accent[0], $accent[1], $accent[2]);
+			if (method_exists($pdf, 'Circle')) {
+				$pdf->Circle($paybackX, $zeroY, 1.2, 0, 360, 'F');
+			}
+			$paybackLabel = $outputlangs->transnoentities('LmdbPropalPVPayback').' '
+				.price(price2num($result->paybackYears, 'MT'), 0, $outputlangs).' '
+				.$outputlangs->transnoentities('LmdbPropalPVYears');
+			$pdf->SetFont('', 'B', 5.0);
+			$labelWidth = min(58.0, max(31.0, $pdf->GetStringWidth($paybackLabel) + 3.0));
+			$labelHeight = 4.0;
+			$labelY = max($plotY + 0.5, $zeroY - 6.0);
+			if (($paybackX - $plotX) >= $labelWidth + 2.0) {
+				$labelX = $paybackX - $labelWidth - 1.5;
+			} else {
+				$labelX = min($plotX + $plotWidth - $labelWidth, $paybackX + 1.5);
+				$labelY = max($plotY + 0.5, $zeroY - 9.0);
+			}
+			$pdf->SetFillColor(255, 255, 255);
+			$pdf->SetTextColor($accent[0], $accent[1], $accent[2]);
+			$pdf->SetXY($labelX, $labelY);
+			$pdf->Cell($labelWidth, $labelHeight, $paybackLabel, 0, 0, 'C', true, '', 1);
+			$pdf->SetFont('', '', 4.6);
+			$pdf->SetTextColor(85, 85, 85);
 		}
 		if (method_exists($pdf, 'SetLineStyle')) {
 			$pdf->SetLineStyle(array('width' => 0.2, 'dash' => 0, 'color' => array(190, 195, 200)));
@@ -741,6 +764,9 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->setPrintHeader(false);
 			$pdf->setPrintFooter(false);
 		}
+		// Imported pages are already fully laid out. Keeping TCPDF automatic page
+		// breaks enabled here would move the pagination cell to a new blank page.
+		$pdf->SetAutoPageBreak(false, 0);
 		$pdf->SetFont(pdf_getPDFFont($outputlangs), '', 7);
 		try {
 			$supplementPages = $pdf->setSourceFile($supplementFile);
@@ -824,7 +850,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		}
 		$pdf->SetFont(pdf_getPDFFont($outputlangs), '', 7);
 		$pdf->SetXY($positionX, $positionY);
-		$pdf->MultiCell($boxWidth, 2.0, ((string) $finalPage).' / '.((string) $totalPages), 0, 'R', 0);
+		$pdf->Cell($boxWidth, 2.0, ((string) $finalPage).' / '.((string) $totalPages), 0, 0, 'R', 0);
 	}
 
 	/** @return array{0:int,1:int,2:int} */

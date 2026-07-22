@@ -285,7 +285,10 @@ if ($study['complete'] && $study['result'] instanceof LmdbPropalPVFinancialResul
 		'LmdbPropalPVSimplifiedProductionCost' => price(price2num($result->simplifiedProductionCostPerKwh, 'MT')).' '.$study['currency_code'].'/kWh',
 	);
 	foreach ($metrics as $label => $value) {
-		print '<tr><td class="titlefield">'.$langs->trans($label).'</td><td><strong>'.$value.'</strong></td></tr>';
+		$displayValue = $label === 'LmdbPropalPVPayback'
+			? '<span class="badge badge-primary">'.dol_escape_htmltag($value).'</span>'
+			: '<strong>'.$value.'</strong>';
+		print '<tr><td class="titlefield">'.$langs->trans($label).'</td><td>'.$displayValue.'</td></tr>';
 	}
 	print '</table></div></div><div class="clearboth"></div><br>';
 	print lmdbpropalpvCashflowGraph($result, $study['currency_code'], (int) $object->entity);
@@ -393,17 +396,37 @@ function lmdbpropalpvCashflowGraph(LmdbPropalPVFinancialResult $result, $currenc
 		$svg .= '<text x="68" y="'.($y + 4.0).'" text-anchor="end" font-size="11" fill="#555">'.dol_escape_htmltag(price(price2num($tick, 'MT'))).'</text>';
 	}
 	$svg .= '<text x="18" y="15" font-size="11" fill="#555">'.dol_escape_htmltag((string) $currencyCode).'</text>';
+	$paybackX = null;
+	$paybackLabel = '';
+	$paybackLabelX = 0.0;
+	$paybackLabelY = 0.0;
+	$paybackLabelAnchor = 'start';
+	$paybackLabelWidth = 0.0;
 	if ($result->paybackYears !== null) {
 		$paybackX = $left + ($result->paybackYears / 20.0) * $plotWidth;
 		$svg .= '<line x1="'.$left.'" y1="'.$zeroY.'" x2="'.$paybackX.'" y2="'.$zeroY.'" stroke="'.dol_escape_htmltag($accent).'" stroke-width="2.5" stroke-dasharray="7 5"/>';
 		$svg .= '<line x1="'.$paybackX.'" y1="'.$zeroY.'" x2="'.$paybackX.'" y2="'.($top + $plotHeight).'" stroke="'.dol_escape_htmltag($accent).'" stroke-width="2.5" stroke-dasharray="7 5"/>';
-		$svg .= '<circle cx="'.$paybackX.'" cy="'.$zeroY.'" r="5" fill="'.dol_escape_htmltag($accent).'"/>';
-		$svg .= '<text x="'.($paybackX + 6.0).'" y="'.($zeroY - 8.0).'" font-size="11" font-weight="bold" fill="'.dol_escape_htmltag($accent).'">'.dol_escape_htmltag($langs->trans('LmdbPropalPVPayback').' '.price(price2num($result->paybackYears, 'MT')).' '.$langs->trans('LmdbPropalPVYears')).'</text>';
+		$paybackLabel = $langs->trans('LmdbPropalPVPayback').' '.price(price2num($result->paybackYears, 'MT')).' '.$langs->trans('LmdbPropalPVYears');
+		$paybackLabelWidth = min(210.0, max(115.0, strlen($paybackLabel) * 6.0));
+		$paybackLabelY = max($top + 15.0, $zeroY - 13.0);
+		if (($paybackX - $left) >= $paybackLabelWidth + 14.0) {
+			$paybackLabelX = $paybackX - 9.0;
+			$paybackLabelAnchor = 'end';
+		} else {
+			$paybackLabelX = min($left + $plotWidth - $paybackLabelWidth, $paybackX + 9.0);
+			$paybackLabelY = max($top + 15.0, $zeroY - 25.0);
+		}
 	}
 	$svg .= '<polyline points="'.dol_escape_htmltag(implode(' ', $points)).'" fill="none" stroke="'.dol_escape_htmltag($primary).'" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>';
 	foreach ($points as $point) {
 		$coordinates = explode(',', $point);
 		$svg .= '<circle cx="'.$coordinates[0].'" cy="'.$coordinates[1].'" r="3" fill="'.dol_escape_htmltag($primary).'"/>';
+	}
+	if ($paybackX !== null) {
+		$labelRectX = $paybackLabelAnchor === 'end' ? $paybackLabelX - $paybackLabelWidth - 4.0 : $paybackLabelX - 4.0;
+		$svg .= '<circle cx="'.$paybackX.'" cy="'.$zeroY.'" r="5" fill="'.dol_escape_htmltag($accent).'"/>';
+		$svg .= '<rect x="'.$labelRectX.'" y="'.($paybackLabelY - 12.0).'" width="'.($paybackLabelWidth + 8.0).'" height="16" rx="3" fill="#fff" fill-opacity="0.9"/>';
+		$svg .= '<text x="'.$paybackLabelX.'" y="'.$paybackLabelY.'" text-anchor="'.$paybackLabelAnchor.'" font-size="11" font-weight="bold" fill="'.dol_escape_htmltag($accent).'">'.dol_escape_htmltag($paybackLabel).'</text>';
 	}
 	$svg .= '</svg></div>';
 
