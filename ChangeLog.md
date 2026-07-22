@@ -20,4 +20,5 @@
 - Première activation conservatrice, réglages par entité, droits granulaires et compatibilité Multicompany.
 - Correction du chargement de la bibliothèque native des propositions commerciales sur Dolibarr v20+.
 - Sécurisation de la mesure et du rendu des pieds de page TCPDF afin d’éviter les pages vides de pied lors de la génération du supplément PDF.
+- Pagination PDF globale après composition, incluant le corps commercial, les pages PV et les annexes activées par les options natives de CGV et de fiches produits.
 - Documentation fonctionnelle, paquet de prompts et matrice de tests manuels.

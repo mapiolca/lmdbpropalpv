@@ -41,6 +41,24 @@ foreach (array('lmdbpropalpv_withpictures', 'lmdbpropalpv_withoutpictures', 'gen
 		throw new RuntimeException('A recursive or non-PDF proposal model was accepted: '.$unsafeProposalModel.'.');
 	}
 }
+$mergePlan = lmdbpropalpvBuildPdfMergePagePlan(3, 2);
+$expectedMergeOrder = array('supplement:1', 'body:1', 'body:2', 'supplement:2', 'supplement:3');
+if (count($mergePlan) !== 5) {
+	throw new RuntimeException('The composed proposal must count every supplement and commercial page.');
+}
+foreach ($mergePlan as $index => $pageData) {
+	$actualSource = $pageData['source'].':'.((string) $pageData['source_page']);
+	if ($actualSource !== $expectedMergeOrder[$index] || $pageData['final_page'] !== $index + 1 || $pageData['total_pages'] !== 5) {
+		throw new RuntimeException('Unexpected composed PDF order or global pagination at index '.((string) $index).'.');
+	}
+}
+$annexMergePlan = lmdbpropalpvBuildPdfMergePagePlan(3, 7);
+if (count($annexMergePlan) !== 10 || $annexMergePlan[7]['source'] !== 'body' || $annexMergePlan[7]['source_page'] !== 7 || $annexMergePlan[9]['final_page'] !== 10) {
+	throw new RuntimeException('Terms-of-sale and product-sheet pages must remain in the commercial body and global pagination.');
+}
+if (lmdbpropalpvBuildPdfMergePagePlan(0, 2) !== array() || lmdbpropalpvBuildPdfMergePagePlan(3, 0) !== array()) {
+	throw new RuntimeException('An empty PDF source must not produce a merge plan.');
+}
 $input = new LmdbPropalPVFinancialInput(1884.7575, 'EUR', 3.0, 3456.0, 0.68, 0.0045, 0.0045, 0.03, 0.2146, 0.04, 80.0);
 $result = $calculator->calculate($input);
 

@@ -83,6 +83,54 @@ function lmdbpropalpvBaseProposalModelNameIsSafe($model)
 }
 
 /**
+ * Build the final page order for the composed PV proposal.
+ *
+ * The body page count is read only after the selected proposal model has
+ * finished generating its document. It therefore already includes every page
+ * enabled by that model, including terms of sale and product data sheets.
+ *
+ * @param int $supplementPages Number of PV supplement pages
+ * @param int $bodyPages       Number of generated commercial body pages
+ * @return list<array{source:string,source_page:int,final_page:int,total_pages:int}>
+ */
+function lmdbpropalpvBuildPdfMergePagePlan($supplementPages, $bodyPages)
+{
+	$supplementPages = (int) $supplementPages;
+	$bodyPages = (int) $bodyPages;
+	if ($supplementPages < 1 || $bodyPages < 1) {
+		return array();
+	}
+
+	$totalPages = $supplementPages + $bodyPages;
+	$plan = array();
+	$finalPage = 0;
+	$plan[] = array(
+		'source' => 'supplement',
+		'source_page' => 1,
+		'final_page' => ++$finalPage,
+		'total_pages' => $totalPages,
+	);
+	for ($sourcePage = 1; $sourcePage <= $bodyPages; $sourcePage++) {
+		$plan[] = array(
+			'source' => 'body',
+			'source_page' => $sourcePage,
+			'final_page' => ++$finalPage,
+			'total_pages' => $totalPages,
+		);
+	}
+	for ($sourcePage = 2; $sourcePage <= $supplementPages; $sourcePage++) {
+		$plan[] = array(
+			'source' => 'supplement',
+			'source_page' => $sourcePage,
+			'final_page' => ++$finalPage,
+			'total_pages' => $totalPages,
+		);
+	}
+
+	return $plan;
+}
+
+/**
  * Return active PHP proposal models that can provide the commercial PDF body.
  *
  * The native Cyan model remains available as a safe fallback even when its row

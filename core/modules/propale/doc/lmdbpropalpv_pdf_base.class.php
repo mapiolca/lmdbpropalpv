@@ -106,7 +106,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			dol_delete_file($supplement, 0, 1, 1, null, false, 0);
 			return 0;
 		}
-		if (!$this->mergeDocuments($supplement, $file, $merged, $outputlangs)) {
+		if (!$this->mergeDocuments($supplement, $file, $merged, $object, $outputlangs)) {
 			dol_delete_file($supplement, 0, 1, 1, null, false, 0);
 			dol_delete_file($merged, 0, 1, 1, null, false, 0);
 			return 0;
@@ -723,8 +723,14 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetDrawColor(190, 195, 200);
 	}
 
-	/** @return bool */
-	private function mergeDocuments($supplementFile, $bodyFile, $mergedFile, $outputlangs)
+	/**
+	 * Merge the completed commercial PDF with the PV pages and add one global
+	 * pagination pass. The commercial source is counted after its own model has
+	 * applied the configured terms-of-sale and product-sheet options.
+	 *
+	 * @return bool
+	 */
+	private function mergeDocuments($supplementFile, $bodyFile, $mergedFile, $object, $outputlangs)
 	{
 		$pdf = pdf_getInstance($this->format);
 		if (!is_object($pdf) || !method_exists($pdf, 'setSourceFile')) {
@@ -735,18 +741,29 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			$pdf->setPrintHeader(false);
 			$pdf->setPrintFooter(false);
 		}
+		$pdf->SetFont(pdf_getPDFFont($outputlangs), '', 7);
 		try {
 			$supplementPages = $pdf->setSourceFile($supplementFile);
-			$this->importPage($pdf, 1);
 			$bodyPages = $pdf->setSourceFile($bodyFile);
-			for ($page = 1; $page <= $bodyPages; $page++) {
-				$this->importPage($pdf, $page);
+			$pagePlan = lmdbpropalpvBuildPdfMergePagePlan($supplementPages, $bodyPages);
+			if (empty($pagePlan)) {
+				$this->error = $outputlangs->transnoentities('LmdbPropalPVErrorPdfComposition');
+				return false;
 			}
-			if ($supplementPages > 1) {
-				$pdf->setSourceFile($supplementFile);
-				for ($page = 2; $page <= $supplementPages; $page++) {
-					$this->importPage($pdf, $page);
+			$currentSource = '';
+			foreach ($pagePlan as $pageData) {
+				if ($pageData['source'] !== $currentSource) {
+					$currentSource = $pageData['source'];
+					$pdf->setSourceFile($currentSource === 'body' ? $bodyFile : $supplementFile);
 				}
+				$this->importPage(
+					$pdf,
+					$pageData['source_page'],
+					$object,
+					$outputlangs,
+					$pageData['final_page'],
+					$pageData['total_pages']
+				);
 			}
 			$pdf->Output($mergedFile, 'F');
 		} catch (Throwable $exception) {
@@ -762,7 +779,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 	}
 
 	/** @return void */
-	private function importPage($pdf, $page)
+	private function importPage($pdf, $page, $object, $outputlangs, $finalPage, $totalPages)
 	{
 		$template = $pdf->importPage($page);
 		$size = $pdf->getTemplateSize($template);
@@ -770,6 +787,44 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$height = isset($size['height']) ? (float) $size['height'] : (float) $size['h'];
 		$pdf->AddPage($width > $height ? 'L' : 'P', array($width, $height));
 		$pdf->useTemplate($template);
+		$this->drawFinalPagination($pdf, $object, $outputlangs, (int) $finalPage, (int) $totalPages, $width, $height);
+	}
+
+	/**
+	 * Replace the constituent document number with the final composed number.
+	 *
+	 * A compact opaque area is deliberately limited to the native Dolibarr page
+	 * number zone. Imported terms and product sheets keep their original content
+	 * and receive the same global pagination without having their footer rebuilt.
+	 *
+	 * @return void
+	 */
+	private function drawFinalPagination($pdf, $object, $outputlangs, $finalPage, $totalPages, $pageWidth, $pageHeight)
+	{
+		$ownerEntity = !empty($object->entity) ? (int) $object->entity : 0;
+		$offsetX = (int) lmdbpropalpvGetEntityStringConstant($this->db, 'PDF_FOOTER_PAGE_NUMBER_X', '0', $ownerEntity);
+		$offsetY = (int) lmdbpropalpvGetEntityStringConstant($this->db, 'PDF_FOOTER_PAGE_NUMBER_Y', '0', $ownerEntity);
+		$boxWidth = 24.0;
+		$boxHeight = 4.0;
+		$positionX = max(0.5, (float) $pageWidth - (float) $this->marge_droite - $boxWidth - (float) $offsetX);
+		$positionY = max(0.5, (float) $pageHeight - (float) $this->marge_basse - 0.5 - (float) $offsetY);
+
+		$backgroundColor = array(255, 255, 255);
+		$footerBackground = lmdbpropalpvGetEntityStringConstant($this->db, 'PDF_FOOTER_BACKGROUND_COLOR', '', $ownerEntity);
+		if (preg_match('/^\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*$/', $footerBackground, $matches)) {
+			$backgroundColor = array(min(255, (int) $matches[1]), min(255, (int) $matches[2]), min(255, (int) $matches[3]));
+		}
+		$pdf->SetFillColor($backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+		$pdf->SetDrawColor($backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+		$pdf->Rect($positionX - 0.5, $positionY - 0.8, $boxWidth + 1.0, $boxHeight, 'F');
+		$pdf->SetTextColor(0, 0, 0);
+		$footerColor = lmdbpropalpvGetEntityStringConstant($this->db, 'PDF_FOOTER_TEXT_COLOR', '', $ownerEntity);
+		if (preg_match('/^\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*,\s*([0-9]{1,3})\s*$/', $footerColor, $matches)) {
+			$pdf->SetTextColor(min(255, (int) $matches[1]), min(255, (int) $matches[2]), min(255, (int) $matches[3]));
+		}
+		$pdf->SetFont(pdf_getPDFFont($outputlangs), '', 7);
+		$pdf->SetXY($positionX, $positionY);
+		$pdf->MultiCell($boxWidth, 2.0, ((string) $finalPage).' / '.((string) $totalPages), 0, 'R', 0);
 	}
 
 	/** @return array{0:int,1:int,2:int} */
