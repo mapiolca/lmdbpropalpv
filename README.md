@@ -2,7 +2,7 @@
 
 « Propositions commerciales PV » est un module externe Dolibarr ajoutant une étude de retour sur investissement photovoltaïque aux propositions commerciales et deux modèles PDF modernes prêts à signer. Sa clé technique reste `lmdbpropalpv`.
 
-Version `1.0.0` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
+Version `1.0.1` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
 
 ## Compatibilité
 

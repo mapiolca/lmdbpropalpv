@@ -19,7 +19,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->name = preg_replace('/^mod/i', '', get_class($this));
 		$this->description = 'LmdbPropalPVModuleDescription';
 		$this->descriptionlong = 'LmdbPropalPVModuleDescriptionLong';
-		$this->version = '1.0.0';
+		$this->version = '1.0.1';
 		$this->editor_name = 'Les Métiers du Bâtiment';
 		$this->editor_url = 'https://lesmetiersdubatiment.fr';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
@@ -81,7 +81,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->rights[$r][4] = 'setup';
 		$this->rights[$r][5] = 'write';
 
-		$this->menus = array();
+		$this->menu = array();
 		$this->tabs = array(
 			'propal:+lmdbpropalpv:FinancialStudyPV:lmdbpropalpv@lmdbpropalpv:'.
 				'isModEnabled("lmdbpropalpv") && ($user->admin || (isModEnabled("multicompany") && ($user->hasRight("multicompany", "admin", "read") || $user->hasRight("multicompany", "admin", "write") || $user->hasRight("multicompany", "entities", "write"))) || ($user->hasRight("lmdbpropalpv", "study", "read") && $user->hasRight("propal", "lire")))'.

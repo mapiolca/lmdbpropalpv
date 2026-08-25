@@ -312,7 +312,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetMargins($this->marge_gauche, $this->marge_haute, $this->marge_droite);
 		$pdf->SetAutoPageBreak(true, $this->getFooterHeight($pdf, $object, true));
 		$pdf->SetTitle($outputlangs->convToOutputCharset($object->ref));
-		$pdf->SetCreator('Dolibarr '.DOL_VERSION.' / LmdbPropalPV 1.0.0');
+		$pdf->SetCreator('Dolibarr '.DOL_VERSION.' / LmdbPropalPV 1.0.1');
 
 		$this->addProtectedPage($pdf, $object, true);
 		$this->drawCover($pdf, $object, $outputlangs, $study);
