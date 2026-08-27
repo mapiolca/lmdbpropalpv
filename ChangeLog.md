@@ -1,5 +1,14 @@
 # ChangeLog
 
+## 1.0.1 - 2026-08-27
+
+### Raccordement et kits
+
+- Prise en compte des onduleurs inclus dans les kits Dolibarr, avec multiplication par la quantité du kit dans le devis.
+- Développement récursif des kits imbriqués et cumul des onduleurs présents directement ou par plusieurs compositions.
+- Alerte non bloquante indiquant la référence de chaque onduleur sans puissance renseignée, avec maintien du repli prudent sur la puissance-crête.
+- Tests automatisés et recette manuelle complétés pour les kits simples, multiples, imbriqués et incomplets.
+
 ## 1.0.0 - 2026-07-22
 
 Première version publique du module « Propositions commerciales PV ».

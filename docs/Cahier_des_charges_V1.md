@@ -4,7 +4,7 @@
 
 Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque comparative sans/avec batterie sur une durée administrable et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
 
-Version : `1.0.0`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
+Version : `1.0.1`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
 
 ## 2. Socle et dépendances
 
@@ -51,9 +51,9 @@ Le titre du navigateur est composé de la référence du devis et du libellé tr
 
 ### 3.2 Contrôle indicatif de raccordement
 
-Les lignes de produits PowerPlantPV de catégorie `ONDULE`, avec quantité positive, alimentent la somme `quantité × ac_nominal_power`, convertie de W en kVA. La puissance installée de référence est `Pmax = min(puissance-crête, somme des puissances AC nominales des onduleurs)`, conformément à la [demande de raccordement Enedis](https://www.enedis.fr/media/1946/download). Les produits et leurs caractéristiques suivent les entités accessibles selon `getEntity('product')`.
+Les lignes de produits PowerPlantPV de catégorie `ONDULE`, avec quantité positive, alimentent la somme `quantité × ac_nominal_power`, convertie de W en kVA. Les produits virtuels Dolibarr sont développés depuis leur composition native : la quantité de chaque onduleur est multipliée par la quantité du kit dans le devis et par les quantités de chaque niveau lorsqu’un kit est imbriqué. Les onduleurs directs et ceux provenant de plusieurs kits sont ensuite cumulés. La puissance installée de référence est `Pmax = min(puissance-crête, somme des puissances AC nominales des onduleurs)`, conformément à la [demande de raccordement Enedis](https://www.enedis.fr/media/1946/download). Les produits et leurs caractéristiques suivent les entités accessibles selon `getEntity('product')`.
 
-Si une table, une colonne ou une puissance nominale manque, la puissance-crête devient la référence prudente et le statut est « Vérification incomplète ». Le défaut reste non bloquant. Le type proposé est triphasé si Pmax dépasse 6 kVA ou si un onduleur est triphasé, monophasé sinon. Il est enregistré dans `lmdbpropalpv_connection_phase_mode` au premier enregistrement puis reste modifiable uniquement sur un devis brouillon.
+Si une table, une colonne, une composition de kit ou une puissance nominale manque, la puissance-crête devient la référence prudente et le statut est « Vérification incomplète ». Lorsqu’un onduleur direct ou inclus dans un kit n’a pas de puissance, sa référence est indiquée à l’utilisateur. Le défaut reste non bloquant. Le type proposé est triphasé si Pmax dépasse 6 kVA ou si un onduleur est triphasé, monophasé sinon. Il est enregistré dans `lmdbpropalpv_connection_phase_mode` au premier enregistrement puis reste modifiable uniquement sur un devis brouillon.
 
 Le contrôle compare Pmax à la puissance souscrite et propose le plus petit palier Bleu ou Jaune disponible. Au-delà de 250 kVA, il demande une étude spécifique. La règle stricte est explicitement formulée par Enedis pour [l’autoconsommation sans injection](https://www.enedis.fr/media/1955/download) ; pour la vente du surplus, une puissance souscrite inférieure déclenche donc seulement une alerte « augmentation à vérifier » auprès du fournisseur ou d’Enedis, sans déclarer automatiquement l’installation non conforme. En monophasé, Pmax supérieure à 6 kVA est signalée. En triphasé jusqu’à 36 kVA, l’interface rappelle les limites de 12 kVA par phase et de 6 kVA de déséquilibre ; au-delà de 36 kVA, elle oriente vers une étude de raccordement dédiée.
 

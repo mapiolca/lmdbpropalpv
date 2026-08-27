@@ -19,7 +19,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->name = preg_replace('/^mod/i', '', get_class($this));
 		$this->description = 'LmdbPropalPVModuleDescription';
 		$this->descriptionlong = 'LmdbPropalPVModuleDescriptionLong';
-		$this->version = '1.0.0';
+		$this->version = '1.0.1';
 		$this->editor_name = 'Les Métiers du Bâtiment';
 		$this->editor_url = 'https://lesmetiersdubatiment.fr';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);

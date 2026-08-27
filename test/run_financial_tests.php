@@ -209,6 +209,45 @@ if (!$inverters['data_complete'] || !$inverters['has_three_phase']) {
 	throw new RuntimeException('Complete mixed inverter rows must be exact and detect three-phase products.');
 }
 
+$expandedKitQuantities = LmdbPropalPVInverterPowerResolver::expandProductQuantities(
+	array(10 => 1.0, 100 => 3.0, 200 => 2.0, 300 => 2.0),
+	array(
+		10 => array(),
+		100 => array(
+			20 => array(0 => 20, 1 => 2.0),
+			21 => array(0 => 21, 1 => 1.0),
+		),
+		200 => array(
+			20 => array(0 => 20, 1 => 1.0),
+		),
+		300 => array(
+			400 => array(
+				0 => 400,
+				1 => 2.0,
+				'childs' => array(
+					21 => array(0 => 21, 1 => 3.0),
+				),
+			),
+		),
+	)
+);
+$expectedKitQuantities = array(10 => 1.0, 100 => 3.0, 20 => 8.0, 21 => 15.0, 200 => 2.0, 300 => 2.0, 400 => 4.0);
+if ($expandedKitQuantities !== $expectedKitQuantities) {
+	throw new RuntimeException('Direct, multiple and nested kit quantities must be multiplied and accumulated exactly.');
+}
+$kitInverters = LmdbPropalPVInverterPowerResolver::aggregate(array(
+	array('product_ref' => 'INV-DIRECT', 'quantity' => $expandedKitQuantities[10], 'ac_nominal_power_w' => 5000.0, 'phase_count' => 1),
+	array('product_ref' => 'INV-KIT-A', 'quantity' => $expandedKitQuantities[20], 'ac_nominal_power_w' => 3000.0, 'phase_count' => 1),
+	array('product_ref' => 'INV-KIT-B', 'quantity' => $expandedKitQuantities[21], 'ac_nominal_power_w' => 1000.0, 'phase_count' => 3),
+));
+assertNear((float) $kitInverters['total_nominal_power_kva'], 44.0, 0.000000001, 'Direct and recursively nested kit inverter power');
+if (!$kitInverters['data_complete'] || !$kitInverters['has_three_phase']) {
+	throw new RuntimeException('Complete kit inverter data must remain exact and detect nested three-phase products.');
+}
+if (LmdbPropalPVInverterPowerResolver::expandProductQuantities(array(100 => 1.0), array(100 => array(20 => array(0 => 20, 1 => 0.0)))) !== null) {
+	throw new RuntimeException('A malformed kit quantity must trigger the conservative resolver fallback.');
+}
+
 $partialInverters = LmdbPropalPVInverterPowerResolver::aggregate(array(
 	array('product_ref' => 'INV-OK', 'quantity' => 1.0, 'ac_nominal_power_w' => 3000.0, 'phase_count' => 1),
 	array('product_ref' => 'INV-MISSING', 'quantity' => 1.0, 'ac_nominal_power_w' => null, 'phase_count' => 3),
@@ -216,6 +255,15 @@ $partialInverters = LmdbPropalPVInverterPowerResolver::aggregate(array(
 assertNear((float) $partialInverters['total_nominal_power_kva'], 3.0, 0.000000001, 'Partial inverter nominal AC aggregation');
 if ($partialInverters['data_complete'] || $partialInverters['product_refs'] !== array('INV-MISSING')) {
 	throw new RuntimeException('A missing inverter power must make the connection verification incomplete and report its reference.');
+}
+
+$partialKitInverters = LmdbPropalPVInverterPowerResolver::aggregate(array(
+	array('product_ref' => 'INV-KIT-OK', 'quantity' => $expandedKitQuantities[20], 'ac_nominal_power_w' => 3000.0, 'phase_count' => 1),
+	array('product_ref' => 'INV-KIT-MISSING', 'quantity' => $expandedKitQuantities[21], 'ac_nominal_power_w' => null, 'phase_count' => 3),
+));
+assertNear((float) $partialKitInverters['total_nominal_power_kva'], 24.0, 0.000000001, 'Partial nested kit inverter aggregation');
+if ($partialKitInverters['data_complete'] || $partialKitInverters['product_refs'] !== array('INV-KIT-MISSING')) {
+	throw new RuntimeException('A nested kit inverter without power must be reported by reference and force the conservative fallback.');
 }
 
 $connectionChecker = new LmdbPropalPVConnectionPowerChecker();

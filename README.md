@@ -2,7 +2,7 @@
 
 « Propositions commerciales PV » est un module externe Dolibarr ajoutant une étude de retour sur investissement photovoltaïque aux propositions commerciales et deux modèles PDF modernes prêts à signer. Sa clé technique reste `lmdbpropalpv`.
 
-Version `1.0.0` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
+Version `1.0.1` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
 
 ## Compatibilité
 
@@ -22,7 +22,7 @@ Version `1.0.0` — identifiant Dolibarr `450010` — famille « Les Métiers du
 - comparaison facultative sans/avec batterie, courbes superposées, deux temps de retour et badges de scénario explicites ;
 - surcoût batterie TTC libre ou figé depuis un autre devis du même tiers, de la même entité et de la même devise ;
 - puissances souscrites du Tarif Bleu et du Tarif Jaune, de 37 à 250 kVA par pas de 1 kVA pour ce dernier ;
-- contrôle indicatif de raccordement à partir de la puissance-crête et des puissances AC nominales des onduleurs PowerPlantPV ;
+- contrôle indicatif de raccordement à partir de la puissance-crête et des puissances AC nominales des onduleurs PowerPlantPV, y compris ceux inclus dans des kits Dolibarr imbriqués ;
 - barèmes officiels S21 et TRVE embarqués depuis 2021, sans accès Internet à l’exécution ;
 - deux modèles PDF natifs, avec ou sans photos produits ;
 - réglages et barèmes isolés par entité ;
@@ -40,7 +40,7 @@ Pour chaque entité, la première activation ajoute et active « PV Signature il
 
 L’étude est accessible depuis l’onglet « Étude financière PV » d’une proposition commerciale. La puissance-crête est lue exclusivement depuis PowerPlantPV ; la production annuelle reste une saisie obligatoire. Les hypothèses et le barème chargé sont enregistrés comme un instantané du devis.
 
-Le module calcule la Pmax de raccordement comme le minimum entre la puissance-crête et la somme des puissances AC nominales des produits ONDULE. Il propose monophasé ou triphasé, compare la Pmax à la puissance souscrite et affiche des alertes informatives dans l’onglet et les deux PDF. Une donnée onduleur absente provoque un repli prudent sur la puissance-crête, jamais une erreur fatale.
+Le module calcule la Pmax de raccordement comme le minimum entre la puissance-crête et la somme des puissances AC nominales des produits ONDULE. Les onduleurs placés directement dans le devis et ceux inclus dans des kits Dolibarr sont cumulés ; chaque quantité de composant est multipliée par la quantité du kit et les kits imbriqués sont développés récursivement. Il propose monophasé ou triphasé, compare la Pmax à la puissance souscrite et affiche des alertes informatives dans l’onglet et les deux PDF. Une donnée onduleur absente provoque une alerte indiquant sa référence et un repli prudent sur la puissance-crête, jamais une erreur fatale.
 
 Les boutons « Recharger le barème applicable » et « Recharger les caractéristiques panneaux » sont les seules actions qui remplacent explicitement leurs snapshots respectifs. Le surcoût issu d’un devis batterie est lui aussi figé ; le bouton « Actualiser depuis le devis batterie » est la seule action qui le recharge. Si le devis source disparaît ou devient inaccessible, le snapshot reste utilisable avec un avertissement. Une mise à jour du module, des barèmes ou des fiches produits ne modifie jamais un devis existant.
 

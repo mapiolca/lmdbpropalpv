@@ -3,6 +3,7 @@
 
 require '../../../main.inc.php';
 dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
+dol_include_once('/lmdbpropalpv/core/modules/modLmdbPropalPV.class.php');
 
 $langs->loadLangs(array('admin', 'lmdbpropalpv@lmdbpropalpv'));
 if (!isModEnabled('lmdbpropalpv')) {
@@ -12,13 +13,15 @@ if (!lmdbpropalpvCanDo($user, 'setup')) {
 	accessforbidden();
 }
 
+$moduleDescriptor = new modLmdbPropalPV($db);
+
 llxHeader('', $langs->trans('About'));
 print load_fiche_titre($langs->trans('LmdbPropalPVSetup'), lmdbpropalpvAdminLinkBack(), 'solar-panel');
 print dol_get_fiche_head(lmdbpropalpvAdminPrepareHead(), 'about', $langs->trans('LmdbPropalPVSetup'), -1, 'solar-panel');
 print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('ModuleLmdbPropalPVName').'</th></tr>';
 $rows = array(
-	array($langs->trans('Version'), '1.0.0'),
+	array($langs->trans('Version'), (string) $moduleDescriptor->version),
 	array($langs->trans('Author'), 'Pierre Ardoin <developpeur@lesmetiersdubatiment.fr>'),
 	array($langs->trans('Description'), $langs->trans('LmdbPropalPVAboutDescription')),
 	array($langs->trans('Compatibility'), 'Dolibarr 20+ / PHP 8.0+ / MySQL-MariaDB'),

@@ -27,6 +27,10 @@ class LmdbPropalPVInverterPowerResolver
 		if ($quantities === null) {
 			return self::fallback('LmdbPropalPVConnectionInverterSchemaUnavailable');
 		}
+		$quantities = $this->fetchExpandedProductQuantities($quantities);
+		if ($quantities === null) {
+			return self::fallback('LmdbPropalPVConnectionKitCompositionUnavailable');
+		}
 		if (empty($quantities)) {
 			return self::fallback('LmdbPropalPVConnectionNoEligibleInverter');
 		}
@@ -138,6 +142,93 @@ class LmdbPropalPVInverterPowerResolver
 		$this->db->free($resql);
 
 		return $quantities;
+	}
+
+	/**
+	 * Add the recursively expanded native Dolibarr kit components to proposal quantities.
+	 *
+	 * @param array<int,float> $quantities Direct proposal product quantities
+	 * @return array<int,float>|null Expanded quantities, or null when a kit tree cannot be read
+	 */
+	private function fetchExpandedProductQuantities(array $quantities): ?array
+	{
+		if (empty($quantities)) {
+			return array();
+		}
+		if (!class_exists('Product')) {
+			require_once DOL_DOCUMENT_ROOT.'/product/class/product.class.php';
+		}
+
+		$product = new Product($this->db);
+		$kitTrees = array();
+		foreach ($quantities as $productId => $quantity) {
+			$tree = $product->getChildsArbo($productId);
+			if (!is_array($tree)) {
+				dol_syslog(__METHOD__.' unable to load kit tree for product '.((string) $productId), LOG_WARNING);
+				return null;
+			}
+			$kitTrees[$productId] = $tree;
+		}
+
+		return self::expandProductQuantities($quantities, $kitTrees);
+	}
+
+	/**
+	 * Pure expansion of proposal quantities through native Dolibarr kit trees.
+	 *
+	 * The tree nodes use the numeric shape returned by Product::getChildsArbo(). Values
+	 * are validated at this Dolibarr boundary before being used by the calculation.
+	 *
+	 * @param array<int,float> $proposalQuantities Direct proposal product quantities
+	 * @param array<int,array<int,array<int|string,mixed>>> $kitTrees Trees indexed by proposal product ID
+	 * @return array<int,float>|null Expanded quantities, or null when a tree is malformed
+	 */
+	public static function expandProductQuantities(array $proposalQuantities, array $kitTrees): ?array
+	{
+		$expanded = array();
+		foreach ($proposalQuantities as $productId => $quantity) {
+			$productId = (int) $productId;
+			$quantity = (float) $quantity;
+			if ($productId <= 0 || $quantity <= 0.0 || !is_finite($quantity) || !isset($kitTrees[$productId]) || !is_array($kitTrees[$productId])) {
+				return null;
+			}
+			$expanded[$productId] = ($expanded[$productId] ?? 0.0) + $quantity;
+			if (!self::appendKitTreeQuantities($kitTrees[$productId], $quantity, $expanded)) {
+				return null;
+			}
+		}
+
+		return $expanded;
+	}
+
+	/**
+	 * @param array<int,array<int|string,mixed>> $tree Native Dolibarr kit tree
+	 * @param float $parentQuantity Effective parent quantity
+	 * @param array<int,float> $expanded Accumulated effective product quantities
+	 * @return bool False when a native tree node is malformed
+	 */
+	private static function appendKitTreeQuantities(array $tree, float $parentQuantity, array &$expanded): bool
+	{
+		foreach ($tree as $node) {
+			if (!is_array($node) || !isset($node[0], $node[1]) || !is_numeric($node[0]) || !is_numeric($node[1])) {
+				return false;
+			}
+			$productId = (int) $node[0];
+			$componentQuantity = (float) $node[1];
+			$effectiveQuantity = $parentQuantity * $componentQuantity;
+			if ($productId <= 0 || $componentQuantity <= 0.0 || !is_finite($componentQuantity) || !is_finite($effectiveQuantity)) {
+				return false;
+			}
+			$expanded[$productId] = ($expanded[$productId] ?? 0.0) + $effectiveQuantity;
+
+			if (array_key_exists('childs', $node)) {
+				if (!is_array($node['childs']) || !self::appendKitTreeQuantities($node['childs'], $effectiveQuantity, $expanded)) {
+					return false;
+				}
+			}
+		}
+
+		return true;
 	}
 
 	/**
