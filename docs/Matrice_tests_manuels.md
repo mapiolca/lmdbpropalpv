@@ -25,6 +25,10 @@
 | Tarif Jaune | recharger un barème personnalisé correspondant exactement à la date, la devise, le profil et la puissance | prix réseau rechargé ; aucune extrapolation depuis une autre puissance |
 | Raccordement | puissance-crête inférieure, égale puis supérieure à la somme AC nominale des onduleurs | Pmax égale au minimum exact des deux puissances |
 | Raccordement | plusieurs onduleurs avec quantités distinctes | somme exacte de `quantité × ac_nominal_power`, exprimée en kVA |
+| Raccordement kit | un kit contient deux onduleurs de 3 kVA et le devis contient trois kits | puissance du kit égale à 6 kVA et contribution au devis égale à 18 kVA |
+| Raccordement kit | onduleur direct, plusieurs kits et même onduleur présent par plusieurs compositions | toutes les quantités effectives sont cumulées une seule fois par occurrence métier |
+| Raccordement kit imbriqué | un kit contient deux sous-kits contenant chacun trois onduleurs | multiplication récursive exacte de la quantité du devis et de chaque niveau de composition |
+| Raccordement kit incomplet | un onduleur inclus dans un kit n’a pas de puissance AC nominale | référence exacte affichée dans l’onglet et les deux PDF, statut incomplet et repli sur la puissance-crête |
 | Raccordement | puissance nominale, table ou colonne absente | statut « Vérification incomplète », repli sur la puissance-crête et aucune erreur fatale |
 | Puissance souscrite | Pmax 10 kVA avec 9 kVA souscrits, puis Pmax 36,1 kVA | alerte informative et suggestions respectives de 12 et 37 kVA |
 | Puissance souscrite | Pmax supérieure à 250 kVA | aucune suggestion automatique et demande d’étude spécifique |
