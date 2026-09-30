@@ -1,5 +1,13 @@
 # ChangeLog
 
+## 1.1.0 - 2026-09-30
+
+- Qualification « Chantier Complexe » propre à chaque devis, enregistrée dès le clic sur un switch natif sans cadre de bouton et utilisable sans JavaScript.
+- Activation optionnelle dans les paramètres du module, désactivée par défaut et conservée par entité ; les valeurs des devis sont préservées lors des désactivations/réactivations.
+- Modification réservée aux utilisateurs internes autorisés à lire et modifier un devis brouillon, avec contrôle du tiers et du partage Multicompany, protection CSRF, verrouillage, gestion des conflits et rejeux sans doublon.
+- Émission du seul trigger natif `PROPAL_MODIFY` avec ancienne copie du devis et rollback SQL en cas d’échec ; contrat consommateur, traductions FR/EN et contrôles automatisés complétés. La règle de marge dans `lmdbsalescommissions` reste une évolution ultérieure.
+- Après mise à jour, réactiver le module dans chaque entité concernée pour créer l’extrafield puis activer le réglage. Le socle Dolibarr 20+/PHP 8.0+ et les PDF restent inchangés.
+
 ## 1.0.1 - 2026-08-27
 
 ### Raccordement et kits

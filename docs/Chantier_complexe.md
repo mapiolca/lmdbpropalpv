@@ -1,6 +1,6 @@
 # Qualification « Chantier Complexe »
 
-Cette fonctionnalité est implémentée sur la branche `feat/chantier-complexe`, à partir du module `1.0.1`. Elle ne constitue pas une nouvelle release publiée. Elle qualifie exclusivement le devis ; elle ne modifie pas son projet, ses PDF ni le calcul des commissions.
+Cette fonctionnalité est intégrée à la version `1.1.0` du module. Elle qualifie exclusivement le devis ; elle ne modifie pas son projet, ses PDF ni le calcul des commissions.
 
 ## Activation et accès
 

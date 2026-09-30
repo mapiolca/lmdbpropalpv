@@ -4,7 +4,7 @@
 
 Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque comparative sans/avec batterie sur une durée administrable et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
 
-Version : `1.0.1`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
+Version : `1.1.0`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
 
 ## 2. Socle et dépendances
 
@@ -16,7 +16,7 @@ Version : `1.0.1`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métie
 - français et anglais ;
 - compatibilité Multicompany par isolation stricte des entités.
 
-Aucun fichier du core, de PowerPlantPV, de JPSUN ou d’un autre module n’est modifié. Le module ne crée aucun menu haut. L’accès métier se fait par un onglet externe du devis.
+Aucun fichier du core, de PowerPlantPV, de JPSUN ou d’un autre module n’est modifié. Le module ne crée aucun menu haut. L’étude est accessible par un onglet externe du devis ; la qualification « Chantier Complexe » s’affiche sur sa fiche principale.
 
 ## 3. Parcours utilisateur
 
@@ -72,6 +72,12 @@ Une configuration batterie absente ou partielle ne rend pas le scénario sans ba
 Une étude incomplète liste les informations manquantes. La génération d’un modèle PV reste possible, mais les pages financières sont omises et un avertissement Dolibarr non bloquant est affiché.
 
 La bannière reprend les informations natives de la fiche Proposition commerciale : référence client, tiers, lien vers les autres propositions et projet. Les états « Étude complète », « Étude incomplète » et « Lecture seule » sont affichés avec des badges Dolibarr natifs contenant leur libellé, dans un tableau `fichehalfright` aligné sur les lignes puissance-crête et investissement. Les indicateurs comparatifs et les deux temps de retour utilisent des badges de scénario au format `h2`, sans modifier les badges natifs de statut ; les valeurs annuelles conservent des badges compacts.
+
+### 3.5 Qualification « Chantier Complexe »
+
+Le réglage `LMDBPROPALPV_COMPLEX_SITE_ENABLED`, désactivé par défaut et conservé par entité, affiche un switch natif sur la fiche principale de chaque devis enregistré, même sans projet lié ni étude PV. Le clic enregistre l’extrafield booléen `lmdbpropalpv_complex_site` par un POST protégé, utilisable sans JavaScript.
+
+Cette qualification est modifiable uniquement en brouillon par un utilisateur interne disposant directement des droits `propal/lire` et `propal/creer`, dans son périmètre métier et Multicompany. Les autres lecteurs autorisés disposent d’un affichage consultatif. La valeur appartient exclusivement au devis. Un changement réel appelle le trigger natif `PROPAL_MODIFY` avec ancienne copie ; les rejeux identiques sont sans effet et un échec du trigger annule l’écriture SQL. Les PDF et les règles de commissions ne sont pas modifiés. Le contrat détaillé figure dans [Chantier_complexe.md](Chantier_complexe.md).
 
 ## 4. Calcul financier
 

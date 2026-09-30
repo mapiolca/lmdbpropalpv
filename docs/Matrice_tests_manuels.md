@@ -76,7 +76,7 @@
 | CSRF batterie | actualiser le snapshot avec puis sans token | action acceptée avec token et refusée sans token |
 | Multicompany batterie | deux entités avec devis et couleurs distincts | aucune fuite de devis, snapshots ou couleurs entre entités |
 
-## Qualification « Chantier Complexe » — branche de développement
+## Qualification « Chantier Complexe » — version 1.1.0
 
 Ces scénarios restent à exécuter sur une instance réelle. Les simulations automatisées ne constituent pas une validation Dolibarr/Multicompany ou MySQL/MariaDB.
 
