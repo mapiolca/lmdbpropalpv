@@ -266,7 +266,7 @@ assertComplexSite(LmdbPropalPVComplexSiteService::isAvailable($db) && $service->
 $service = resetComplexSiteTest(); $object = new Propal($db); $object->fetch(1);
 $hook = new ActionsLmdbPropalPV($db); $action = ''; $manager = new stdClass();
 $hook->formObjectOptions(array('context' => 'propalcard:globalcard'), $object, $action, $manager);
-assertComplexSite(strpos($hook->resprints, 'method="POST"') !== false && strpos($hook->resprints, 'name="token"') !== false && strpos($hook->resprints, 'role="switch"') !== false && strpos($hook->resprints, 'aria-checked="false"') !== false && strpos($hook->resprints, '<script') === false, 'Accessible native switch works without JS');
+assertComplexSite(strpos($hook->resprints, 'method="POST"') !== false && strpos($hook->resprints, 'name="token"') !== false && strpos($hook->resprints, 'role="switch"') !== false && strpos($hook->resprints, 'aria-checked="false"') !== false && strpos($hook->resprints, '<script') === false && strpos($hook->resprints, 'class="nobordertransp linkobject valignmiddle"') !== false && strpos($hook->resprints, 'class="button') === false, 'Accessible native switch without button decoration works without JS');
 $user->write = false;
 $hook->formObjectOptions(array('context' => 'propalcard'), $object, $action, $manager);
 assertComplexSite(strpos($hook->resprints, '<form') === false && strpos($hook->resprints, 'switch_off') !== false, 'Read-only rendering');

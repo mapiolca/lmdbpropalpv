@@ -63,7 +63,7 @@ class ActionsLmdbPropalPV
 			$this->resprints .= '<input type="hidden" name="action" value="setcomplexsite">';
 			$this->resprints .= '<input type="hidden" name="complex_site" value="'.(1 - $value).'">';
 			$this->resprints .= '<input type="hidden" name="expected_complex_site" value="'.$value.'">';
-			$this->resprints .= '<button type="submit" class="button small" role="switch" aria-checked="'.($value ? 'true' : 'false').'" aria-label="'.dol_escape_htmltag($label).'">'.$icon.'</button>';
+			$this->resprints .= '<button type="submit" class="nobordertransp linkobject valignmiddle" role="switch" aria-checked="'.($value ? 'true' : 'false').'" aria-label="'.dol_escape_htmltag($label).'">'.$icon.'</button>';
 			$this->resprints .= '</form>';
 		} else {
 			$this->resprints .= $icon;
