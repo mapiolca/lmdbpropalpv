@@ -3,6 +3,7 @@
 
 require '../../../main.inc.php';
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
+require_once DOL_DOCUMENT_ROOT.'/core/lib/ajax.lib.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.form.class.php';
 require_once DOL_DOCUMENT_ROOT.'/core/class/html.formother.class.php';
 dol_include_once('/lmdbpropalpv/lib/lmdbpropalpv.lib.php');
@@ -12,12 +13,28 @@ $langs->loadLangs(array('admin', 'propal', 'lmdbpropalpv@lmdbpropalpv'));
 if (!isModEnabled('lmdbpropalpv')) {
 	accessforbidden();
 }
-if (!lmdbpropalpvCanDo($user, 'setup')) {
+if (empty($user->admin)) {
 	accessforbidden();
 }
 
 $baseProposalModelOptions = lmdbpropalpvGetBaseProposalModelOptions($db, (int) $conf->entity);
 $action = GETPOST('action', 'aZ09');
+if (in_array($action, array('set_LMDBPROPALPV_COMPLEX_SITE_ENABLED', 'del_LMDBPROPALPV_COMPLEX_SITE_ENABLED'), true)) {
+	// Native constant switch fallback when JavaScript is disabled.
+	$token = GETPOST('token', 'alpha');
+	if (!is_string($token) || $token === '' || currentToken() === '' || !hash_equals(currentToken(), $token)
+		|| GETPOSTINT('entity') !== (int) $conf->entity) {
+		accessforbidden();
+	}
+	$value = $action === 'set_LMDBPROPALPV_COMPLEX_SITE_ENABLED' ? '1' : '0';
+	if (dolibarr_set_const($db, 'LMDBPROPALPV_COMPLEX_SITE_ENABLED', $value, 'chaine', 0, '', (int) $conf->entity) <= 0) {
+		setEventMessages($db->lasterror(), null, 'errors');
+	} else {
+		setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
+	}
+	header('Location: '.$_SERVER['PHP_SELF']);
+	exit;
+}
 if ($action === 'save') {
 	if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 		accessforbidden();
@@ -125,6 +142,12 @@ $formother = new FormOther($db);
 llxHeader('', $langs->trans('LmdbPropalPVSetup'));
 print load_fiche_titre($langs->trans('LmdbPropalPVSetup'), lmdbpropalpvAdminLinkBack(), 'solar-panel');
 print dol_get_fiche_head(lmdbpropalpvAdminPrepareHead(), 'settings', $langs->trans('LmdbPropalPVSetup'), -1, 'solar-panel');
+
+print '<table class="noborder centpercent">';
+print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVOptionalFeatures').'</th></tr>';
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVEnableComplexSite'), $langs->trans('LmdbPropalPVEnableComplexSiteHelp'), 1, 'help').'</td><td>';
+print ajax_constantonoff('LMDBPROPALPV_COMPLEX_SITE_ENABLED', array(), (int) $conf->entity, 0, 0, 1, 2, 0, 1);
+print '</td></tr></table><br>';
 
 print '<div class="info">'.$langs->trans('LmdbPropalPVDefaultAssumptionsHelp').'</div><br>';
 print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';

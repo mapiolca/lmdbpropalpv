@@ -75,3 +75,29 @@
 | Courbes proches | configurer deux retours voisins, non atteints puis de grande amplitude | repères décalés, libellés distincts et échelle commune lisible |
 | CSRF batterie | actualiser le snapshot avec puis sans token | action acceptée avec token et refusée sans token |
 | Multicompany batterie | deux entités avec devis et couleurs distincts | aucune fuite de devis, snapshots ou couleurs entre entités |
+
+## Qualification « Chantier Complexe » — branche de développement
+
+Ces scénarios restent à exécuter sur une instance réelle. Les simulations automatisées ne constituent pas une validation Dolibarr/Multicompany ou MySQL/MariaDB.
+
+| Domaine | Scénario | Résultat attendu |
+|---|---|---|
+| Installation | réactiver le module dans deux entités, réglage absent puis configuré à 0 ou 1 | extrafield booléen créé une seule fois, défaut OFF, valeur du réglage conservée, aucun devis requalifié |
+| Réglages | activer puis désactiver l’option, avec et sans JavaScript | switch natif persistant par entité, aucune modification des autres réglages, OFF conserve les valeurs des devis |
+| Réglages | utilisateur sans rôle administrateur, token absent et mauvaise entité dans le repli sans JavaScript | accès ou action refusés |
+| Disponibilité | option OFF, module OFF, extrafields désactivés ou définition absente/désactivée | switch masqué, action serveur refusée, onglet Compatibilité cohérent |
+| Fiche | devis enregistré sans projet et sans étude PV, puis formulaire de création | switch unique sur la fiche enregistrée ; création inchangée et qualification initiale OFF |
+| Qualification | OFF → ON → OFF, puis recharger la fiche | valeur persistante, autres extrafields et projet inchangés ; NULL normalisé à OFF |
+| Droits | utilisateur interne avec lire/creer, lecture seule, puis administrateur sans chacun des droits | seul le premier modifie le brouillon ; aucune élévation administrateur |
+| Externe | utilisateur externe autorisé à lire son devis | valeur consultative, POST de modification refusé |
+| Périmètre | tiers commercial inaccessible, tiers supprimé et retrait d’affectation après affichage | aucune qualification divulguée ou modifiée par le hook ; opération refusée au prochain traitement |
+| Statut | brouillon, validé, signé, refusé et facturé ; validation entre affichage et clic | modification réservée au brouillon rechargé ; états terminaux consultatifs |
+| Multicompany | devis A/B non partagés puis devis de A partagé dans B | aucun accès hors partage ; option de B commande l’affichage dans B, valeur enregistrée dans le devis de A |
+| Concurrence | deux onglets et deux requêtes simultanées demandant la même valeur | une seule écriture et un seul trigger ; attente incohérente refusée |
+| Triggers | observer PROPAL_MODIFY avec Agenda actif puis inactif, et avec lmdbsalescommissions actif puis inactif | ancienne/nouvelle valeur normalisées exactes ; un seul appel natif, aucun événement créé manuellement, aucune hausse de marge ajoutée par cette évolution |
+| Échec | trigger retournant une erreur puis trigger levant une exception | valeur et écritures SQL annulées, transaction fermée, erreur affichée sans token |
+| CSRF | POST valide, sans token, avec token erroné, GET modificatif et valeur 2/texte/tableau | seul le POST valide est traité ; action redirige après traitement, rafraîchissement sans nouvel événement |
+| Interface | clavier/lecteur d’écran, JavaScript désactivé, téléphone/tablette/bureau | switch utilisable et état annoncé, autres champs et extrafields natifs conservés |
+| API | lecture native de l’extrafield | valeur lisible selon l’accès natif au devis ; écritures API et leur verrouillage non étendus par cette fonctionnalité |
+| Non-régression | génération des deux PDF PV et avertissement d’étude incomplète | parcours antérieur conservé, aucune qualification imprimée |
+| Compatibilité | Dolibarr 20 / PHP 8.0 puis versions exactes du parc, avec version Multicompany relevée | scénarios ci-dessus vérifiés sans extrapolation à toute la plage v20+ |

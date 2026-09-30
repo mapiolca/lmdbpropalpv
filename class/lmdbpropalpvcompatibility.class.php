@@ -3,6 +3,7 @@
 
 require_once __DIR__.'/lmdbpropalpvpaneldegradationresolver.class.php';
 require_once __DIR__.'/lmdbpropalpvinverterpowerresolver.class.php';
+require_once __DIR__.'/lmdbpropalpvcomplexsiteservice.class.php';
 
 /** Compatibility registry for all conditional features. */
 class LmdbPropalPVCompatibility
@@ -29,6 +30,17 @@ class LmdbPropalPVCompatibility
 		$inverterSchemaAvailable = $powerplantCompatible && is_object($db) && LmdbPropalPVInverterPowerResolver::isSchemaAvailable($db);
 
 		return array(
+			'complex_site' => array(
+				'label' => 'LmdbPropalPVComplexSite',
+				'description' => 'LmdbPropalPVComplexSiteFeatureDescription',
+				'min_dolibarr' => '20.0.0',
+				'core_available_from' => '20.0.0',
+				'module_available_from' => '20.0.0',
+				'min_php' => '8.0.0',
+				'compatibility_check' => 'LmdbPropalPVComplexSiteService::isAvailable($db)',
+				'available' => is_object($db) && LmdbPropalPVComplexSiteService::isAvailable($db),
+				'reason' => 'LmdbPropalPVComplexSiteUnavailable',
+			),
 			'financial_study' => array(
 				'label' => 'LmdbPropalPVFeatureFinancialStudy',
 				'description' => 'LmdbPropalPVFeatureFinancialStudyDescription',

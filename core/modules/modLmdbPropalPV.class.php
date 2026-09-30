@@ -45,6 +45,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->warnings_activation_ext = array();
 
 		$this->const = array(
+			array('LMDBPROPALPV_COMPLEX_SITE_ENABLED', 'chaine', '0', 'Enable complex-site proposal qualification', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'chaine', '68', 'Default self-consumption percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'chaine', '0.45', 'Default first-year panel degradation percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_PANEL_DEGRADATION_PCT', 'chaine', '0.45', 'Default annual panel degradation percentage', 0, 'current', 0),
@@ -229,6 +230,11 @@ class modLmdbPropalPV extends DolibarrModules
 				$this->error = $extrafields->error;
 				return -1;
 			}
+		}
+		$result = $extrafields->addExtraField('lmdbpropalpv_complex_site', 'LmdbPropalPVComplexSite', 'boolean', 5200, '1', 'propal', 0, 0, '0', '', 0, '', '0', '', '', (string) ((int) $conf->entity), 'lmdbpropalpv@lmdbpropalpv', 'isModEnabled("lmdbpropalpv")', 0, 0);
+		if ($result < 0) {
+			$this->error = $extrafields->error;
+			return -1;
 		}
 
 		return 1;
