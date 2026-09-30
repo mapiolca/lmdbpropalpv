@@ -2,7 +2,7 @@
 
 « Propositions commerciales PV » est un module externe Dolibarr ajoutant une étude de retour sur investissement photovoltaïque aux propositions commerciales et deux modèles PDF modernes prêts à signer. Sa clé technique reste `lmdbpropalpv`.
 
-Version `1.0.1` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
+Version `1.1.0` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
 
 ## Compatibilité
 
@@ -18,6 +18,7 @@ Version `1.0.1` — identifiant Dolibarr `450010` — famille « Les Métiers du
 - puissance-crête lue depuis PowerPlantPV ;
 - dégradations de première année et des années suivantes proposées depuis les modules PowerPlantPV, pondérées par puissance puis figées dans le devis ;
 - hypothèses propres à chaque devis stockées en extrafields ;
+- qualification « Chantier Complexe » sur la fiche du devis, activable dans les paramètres du module ;
 - projection pure sur une période administrable de 1 à 50 ans, avec 20 ans par défaut et sans persistance des lignes calculées ;
 - comparaison facultative sans/avec batterie, courbes superposées, deux temps de retour et badges de scénario explicites ;
 - surcoût batterie TTC libre ou figé depuis un autre devis du même tiers, de la même entité et de la même devise ;
@@ -63,7 +64,16 @@ La méthode de calcul est une estimation commerciale non contractuelle. La V1 ex
 
 ```bash
 php test/run_financial_tests.php
+php test/run_complex_site_tests.php
 find . -type f -name '*.php' -print0 | xargs -0 -n1 php -l
 ```
 
 Les scénarios d’activation, de droits, Multicompany et de rendu PDF doivent être rejoués sur une instance Dolibarr disposant d’une base configurée.
+
+## Qualification « Chantier Complexe »
+
+La version `1.1.0` ajoute un réglage **Activer la qualification « Chantier Complexe »** dans les paramètres du module. Ce réglage est désactivé par défaut et s’applique à l’entité courante de consultation. La page de réglages exige le rôle administrateur natif Dolibarr. Après mise à jour du code, réactiver le module dans chaque entité concernée pour créer l’extrafield, puis activer le réglage.
+
+Le switch apparaît sur la fiche principale d’un devis enregistré, même sans projet lié ni étude PV. Il est modifiable uniquement en brouillon par un utilisateur interne disposant des droits natifs de lecture et de modification du devis, dans son périmètre métier et Multicompany. Le clic enregistre immédiatement la valeur ; aucun JavaScript n’est nécessaire. Les autres utilisateurs autorisés à lire le devis et les autres statuts voient un état consultatif. Désactiver le réglage ou le module conserve les valeurs.
+
+La valeur appartient au devis dans l’extrafield booléen `lmdbpropalpv_complex_site`. Un changement réel appelle uniquement le trigger natif `PROPAL_MODIFY`, avec l’ancienne copie du devis ; un rejeu identique ne produit aucun nouvel événement. Aucune règle de marge n’est encore ajoutée à `lmdbsalescommissions`. Le contrat, les limites API et les preuves de vérification sont décrits dans [la documentation de la qualification](docs/Chantier_complexe.md).
