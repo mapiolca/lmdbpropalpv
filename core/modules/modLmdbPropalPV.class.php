@@ -19,7 +19,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->name = preg_replace('/^mod/i', '', get_class($this));
 		$this->description = 'LmdbPropalPVModuleDescription';
 		$this->descriptionlong = 'LmdbPropalPVModuleDescriptionLong';
-		$this->version = '1.1.0';
+		$this->version = '1.1.1';
 		$this->editor_name = 'Les Métiers du Bâtiment';
 		$this->editor_url = 'https://lesmetiersdubatiment.fr';
 		$this->const_name = 'MAIN_MODULE_'.strtoupper($this->name);
@@ -222,6 +222,7 @@ class modLmdbPropalPV extends DolibarrModules
 			array('lmdbpropalpv_feed_in_price_per_kwh', 'LmdbPropalPVFeedInPrice', 'double', '24,8', ''),
 			array('lmdbpropalpv_premium_per_kwp', 'LmdbPropalPVPremiumPerKwp', 'double', '24,8', ''),
 			array('lmdbpropalpv_tariff_set_id', 'LmdbPropalPVTariffSet', 'int', '11', ''),
+			array('lmdbpropalpv_injection_limit_kva', 'LmdbPropalPVInjectionLimit', 'double', '24,8', ''),
 		);
 		$position = 5100;
 		foreach ($fields as $field) {

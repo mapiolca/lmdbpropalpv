@@ -276,19 +276,14 @@ foreach (array(
 	assertNear($checked->referencePowerKva, $pmaxCase[2], 0.000000001, 'Enedis Pmax minimum rule');
 }
 
+// Import subscription is independent from grid export: no automatic increase.
 $insufficient = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(10.0, 12.0, 9.0, 'three', true));
-if ($insufficient->status !== LmdbPropalPVConnectionPowerResult::STATUS_INCREASE_TO_CHECK || $insufficient->recommendedSubscribedPowerKva !== 12.0) {
-	throw new RuntimeException('An insufficient subscription must suggest the next supported Blue power.');
+if ($insufficient->status !== LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT || $insufficient->recommendedSubscribedPowerKva !== null) {
+	throw new RuntimeException('Installed power must not force an import subscription increase.');
 }
-
 $yellowBoundary = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(36.1, 50.0, 36.0, 'three', true));
-if ($yellowBoundary->recommendedSubscribedPowerKva !== 37.0 || !in_array('LmdbPropalPVConnectionAbove36Study', $yellowBoundary->warningKeys, true)) {
-	throw new RuntimeException('A Pmax just above 36 kVA must suggest 37 kVA and require a dedicated connection study.');
-}
-
-$aboveYellow = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(251.0, 300.0, 250.0, 'three', true));
-if ($aboveYellow->recommendedSubscribedPowerKva !== null || !in_array('LmdbPropalPVConnectionNoAutomaticPowerRecommendation', $aboveYellow->warningKeys, true)) {
-	throw new RuntimeException('No automatic subscribed power may be suggested above 250 kVA.');
+if (!in_array('LmdbPropalPVConnectionAbove36Study', $yellowBoundary->warningKeys, true)) {
+	throw new RuntimeException('Unrestricted export above 36 kVA requires a dedicated study.');
 }
 
 $singleSix = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(6.0, 6.0, 6.0, 'single', true));
@@ -299,6 +294,38 @@ $singleAboveSix = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput
 if ($singleAboveSix->status !== LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE) {
 	throw new RuntimeException('Single-phase Pmax above 6 kVA must be reported as phase-incompatible.');
 }
+
+// Screenshot regression: 7.14 kWp / 7 kVA / 6 kVA import, export limited to 6.
+$limited = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(7.14, 7.0, 6.0, 'single', true, 6.0));
+assertNear($limited->referencePowerKva, 7.0, 0.000000001, 'Installed Pmax remains unchanged');
+assertNear($limited->injectionPowerKva, 6.0, 0.000000001, 'Declared export limit');
+if ($limited->status !== LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT
+	|| $limited->recommendedSubscribedPowerKva !== null
+	|| !in_array('LmdbPropalPVConnectionInjectionLimited', $limited->warningKeys, true)) {
+	throw new RuntimeException('Confirmed 6 kVA export must not require three phases or a 9 kVA import subscription.');
+}
+$unlimited = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(7.14, 7.0, 6.0, 'single', true));
+if ($unlimited->status !== LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE) {
+	throw new RuntimeException('No limitation may be assumed when the export limit is absent.');
+}
+$tooHigh = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(7.14, 7.0, 9.0, 'single', true, 6.01));
+if ($tooHigh->status !== LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE) {
+	throw new RuntimeException('A declared export limit above 6 kVA must still warn on single-phase connections.');
+}
+$noExport = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(7.14, 7.0, 3.0, 'single', true, 0.0));
+assertNear($noExport->injectionPowerKva, 0.0, 0.000000001, 'Zero is an intentional no-export limit');
+foreach (array(-1.0, INF, NAN) as $invalidLimit) {
+	$invalid = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(7.14, 7.0, 6.0, 'single', true, $invalidLimit));
+	if ($invalid->status !== LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE) {
+		throw new RuntimeException('Invalid limits must not produce a compliant check.');
+	}
+}
+$limitedMissing = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(7.14, null, 6.0, 'single', false, 6.0));
+if ($limitedMissing->status !== LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE) {
+	throw new RuntimeException('An export limit does not compensate for incomplete inverter data.');
+}
+$blueThreePhase = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(20.0, 20.0, 24.0, 'three', true));
+assertNear($blueThreePhase->injectionPowerKva, 20.0, 0.000000001, 'Blue tariff three-phase export is not capped to 6 kVA');
 
 $threePhase = $connectionChecker->check(new LmdbPropalPVConnectionPowerInput(20.0, 20.0, 24.0, 'three', true));
 if (!in_array('LmdbPropalPVConnectionThreePhaseBalanceCheck', $threePhase->warningKeys, true)) {

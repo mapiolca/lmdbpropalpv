@@ -13,7 +13,13 @@ class LmdbPropalPVConnectionPowerChecker
 		$referencePowerKva = $inverterPowerUsable
 			? min(max(0.0, $input->peakPowerKwp), (float) $input->inverterNominalPowerKva)
 			: max(0.0, $input->peakPowerKwp);
-		$recommended = self::nextSupportedPower($referencePowerKva);
+		// Import subscription does not determine the allowed export power.
+		$injectionPowerKva = $referencePowerKva;
+		$limit = $input->injectionLimitKva;
+		$limitValid = $limit === null || (is_finite($limit) && $limit >= 0.0);
+		if ($limit !== null && $limitValid) {
+			$injectionPowerKva = min($referencePowerKva, $limit);
+		}
 		$warningKeys = array();
 		$status = LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT;
 
@@ -22,56 +28,37 @@ class LmdbPropalPVConnectionPowerChecker
 			$warningKeys[] = 'LmdbPropalPVConnectionInverterDataIncomplete';
 		}
 
-		if ($referencePowerKva > 36.0) {
+		if ($injectionPowerKva > 36.0) {
 			$warningKeys[] = 'LmdbPropalPVConnectionAbove36Study';
 		}
-		if ($input->phaseMode === 'single' && $referencePowerKva > 6.0) {
+		if ($input->phaseMode === 'single' && $injectionPowerKva > 6.0) {
 			if ($status !== LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE) {
 				$status = LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE;
 			}
 			$warningKeys[] = 'LmdbPropalPVConnectionSinglePhaseLimit';
-		} elseif ($input->phaseMode === 'three' && $referencePowerKva > 0.0 && $referencePowerKva <= 36.0) {
+		} elseif ($input->phaseMode === 'three' && $injectionPowerKva > 0.0 && $injectionPowerKva <= 36.0) {
 			$warningKeys[] = 'LmdbPropalPVConnectionThreePhaseBalanceCheck';
 		}
 
-		if ($referencePowerKva > 0.0 && $input->subscribedPowerKva + 0.00000001 < $referencePowerKva) {
-			if ($status === LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT) {
-				$status = LmdbPropalPVConnectionPowerResult::STATUS_INCREASE_TO_CHECK;
-			}
-			$warningKeys[] = 'LmdbPropalPVConnectionSubscriptionIncreaseCheck';
-		}
-		if ($referencePowerKva > 250.0) {
-			$warningKeys[] = 'LmdbPropalPVConnectionNoAutomaticPowerRecommendation';
+		if (!$limitValid) {
+			$status = LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE;
+			$warningKeys[] = 'LmdbPropalPVInvalidInjectionLimit';
+		} elseif ($limit !== null && $limit < $referencePowerKva) {
+			$warningKeys[] = 'LmdbPropalPVConnectionInjectionLimited';
 		}
 
-		return new LmdbPropalPVConnectionPowerResult(
+		$result = new LmdbPropalPVConnectionPowerResult(
 			$input->peakPowerKwp,
 			$input->inverterNominalPowerKva,
 			$referencePowerKva,
 			$input->subscribedPowerKva,
-			$recommended,
+			null,
 			$input->phaseMode,
 			$status,
 			array_values(array_unique($warningKeys)),
 			$inverterPowerUsable
 		);
-	}
-
-	/** Return the smallest supported Blue/Yellow subscribed power at or above Pmax. */
-	private static function nextSupportedPower(float $powerKva): ?float
-	{
-		if ($powerKva <= 0.0) {
-			return null;
-		}
-		foreach (array(3.0, 6.0, 9.0, 12.0, 15.0, 18.0, 24.0, 30.0, 36.0) as $bluePower) {
-			if ($bluePower + 0.00000001 >= $powerKva) {
-				return $bluePower;
-			}
-		}
-		if ($powerKva <= 250.00000001) {
-			return (float) ceil($powerKva - 0.00000001);
-		}
-
-		return null;
+		$result->injectionPowerKva = $injectionPowerKva;
+		return $result;
 	}
 }

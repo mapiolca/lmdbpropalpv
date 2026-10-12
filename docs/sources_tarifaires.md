@@ -23,3 +23,9 @@ Sources :
 Les deux dernières références définissent les puissances proposées par l’interface. Elles ne constituent pas un historique simplifié des prix Jaunes embarqué : les grilles Jaunes sont horosaisonnières et ne sont pas réduites silencieusement à un prix unique par le module.
 
 La période mai–juillet 2022 possède deux cas officiels S21. Les deux sont conservés. Le résolveur choisit le dernier barème officiel inséré, donc le cas B, tout en laissant le cas A visible et duplicable dans l’administration.
+
+## Contrôle indicatif de raccordement — vérification du 12 octobre 2026
+
+Lecture de la documentation Enedis-MOP-RAC_045E, version 1 du 15 septembre 2025, remplaçant Enedis-FOR-RAC_22E version 10 : [demande de raccordement Enedis](https://www.enedis.fr/sites/default/files/documents/pdf/Enedis-FOR-RAC_22E.pdf). La rubrique E2 distingue Pmax (minimum puissance-crête / puissance nominale onduleurs) et Pracc (puissance maximale demandée en injection). Le renvoi 33 limite Pracc à 6 kVA en monophasé ; le renvoi 35 rappelle 12 kVA par phase et 6 kVA de déséquilibre en triphasé jusqu’à 36 kVA. Ces règles ne sont pas un plafond de tous les contrats Tarif Bleu.
+
+Il s’agit d’une lecture documentaire, pas d’une validation technique du dispositif de bridage ni d’un accord Enedis. La limite saisie sert au contrôle indicatif et n’applique aucun réglage aux onduleurs. Les calculs annuels ne disposent pas du profil temporel permettant de quantifier l’écrêtement. Aucun appel réseau n’est ajouté à l’exécution.

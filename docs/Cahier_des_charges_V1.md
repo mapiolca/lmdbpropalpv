@@ -4,7 +4,7 @@
 
 Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque comparative sans/avec batterie sur une durée administrable et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
 
-Version : `1.1.0`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
+Version : `1.1.1`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
 
 ## 2. Socle et dépendances
 

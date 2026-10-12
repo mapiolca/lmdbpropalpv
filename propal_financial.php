@@ -23,19 +23,29 @@ if ($id <= 0 || $object->fetch($id) <= 0) {
 if (!in_array((int) $object->entity, array_map('intval', explode(',', getEntity('propal'))), true)) {
 	accessforbidden();
 }
-if (!lmdbpropalpvCanDo($user, 'read', $object)) {
+if (!$user->hasRight('lmdbpropalpv', 'study', 'read') || !$user->hasRight('propal', 'lire')
+	|| (!empty($user->socid) && (int) $object->socid !== (int) $user->socid)) {
 	accessforbidden();
 }
 
-$editable = (int) $object->statut === Propal::STATUS_DRAFT && lmdbpropalpvCanDo($user, 'write', $object);
+$editable = (int) $object->statut === Propal::STATUS_DRAFT && $user->hasRight('lmdbpropalpv', 'study', 'write') && $user->hasRight('propal', 'creer');
 $service = new LmdbPropalPVStudyService($db);
 $study = $service->buildStudy($object);
+$injectionInputError = false;
+$postedValues = null;
 
 if (in_array($action, array('save', 'reload_tariff', 'reload_panels', 'reload_battery_investment'), true)) {
 	if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$editable) {
 		accessforbidden();
 	}
 
+	$postedInjectionLimit = trim((string) GETPOST('injection_limit_kva', 'alphanohtml'));
+	$normalizedInjectionLimit = price2num($postedInjectionLimit);
+	if ($postedInjectionLimit !== '' && (!preg_match('/^[0-9]+(?:[.,][0-9]+)?$/D', $postedInjectionLimit) || !is_numeric($normalizedInjectionLimit)
+		|| !is_finite((float) $normalizedInjectionLimit) || (float) $normalizedInjectionLimit < 0.0)) {
+		$injectionInputError = true;
+		setEventMessages($langs->trans('LmdbPropalPVInvalidInjectionLimit'), null, 'errors');
+	}
 	$referenceDate = lmdbpropalpvPostedDate('tariff_reference_date');
 	$values = array(
 		'annual_production_kwh' => (float) price2num(GETPOST('annual_production_kwh', 'alphanohtml')),
@@ -47,6 +57,7 @@ if (in_array($action, array('save', 'reload_tariff', 'reload_panels', 'reload_ba
 		'retail_mode' => GETPOST('retail_mode', 'alpha'),
 		'subscription_kva' => (float) price2num(GETPOST('subscription_kva', 'alphanohtml')),
 		'connection_phase_mode' => GETPOST('connection_phase_mode', 'alpha'),
+		'injection_limit_kva' => lmdbpropalpvPostedOptionalNumber('injection_limit_kva'),
 		'retail_price_per_kwh' => (float) price2num(GETPOST('retail_price_per_kwh', 'alphanohtml'), 'MU'),
 		'feed_in_price_per_kwh' => (float) price2num(GETPOST('feed_in_price_per_kwh', 'alphanohtml'), 'MU'),
 		'premium_per_kwp' => (float) price2num(GETPOST('premium_per_kwp', 'alphanohtml'), 'MU'),
@@ -123,20 +134,24 @@ if (in_array($action, array('save', 'reload_tariff', 'reload_panels', 'reload_ba
 		exit;
 	}
 
-	lmdbpropalpvAssignProposalOptions($object, $values);
-	$result = $object->insertExtraFields('', $user);
-	if ($result < 0) {
-		setEventMessages($object->error, $object->errors, 'errors');
-	} else {
-		$successKey = $action === 'reload_tariff' ? 'LmdbPropalPVTariffReloaded' : ($action === 'reload_panels' ? 'LmdbPropalPVPanelCharacteristicsReloaded' : ($action === 'reload_battery_investment' ? 'LmdbPropalPVBatteryInvestmentReloaded' : 'LmdbPropalPVStudySaved'));
-		setEventMessages($langs->trans($successKey), null, 'mesgs');
+	if (!$injectionInputError) {
+		lmdbpropalpvAssignProposalOptions($object, $values);
+		$result = $object->insertExtraFields('', $user);
+		if ($result < 0) {
+			setEventMessages($object->error, $object->errors, 'errors');
+		} else {
+			$successKey = $action === 'reload_tariff' ? 'LmdbPropalPVTariffReloaded' : ($action === 'reload_panels' ? 'LmdbPropalPVPanelCharacteristicsReloaded' : ($action === 'reload_battery_investment' ? 'LmdbPropalPVBatteryInvestmentReloaded' : 'LmdbPropalPVStudySaved'));
+			setEventMessages($langs->trans($successKey), null, 'mesgs');
+		}
+		header('Location: '.$_SERVER['PHP_SELF'].'?id='.((int) $object->id));
+		exit;
 	}
-	header('Location: '.$_SERVER['PHP_SELF'].'?id='.((int) $object->id));
-	exit;
+	$values['injection_limit_kva'] = $postedInjectionLimit;
+	$postedValues = $values;
 }
 
-$displayValues = $study['values'];
-if ((float) $displayValues['retail_price_per_kwh'] <= 0.0 || ((float) $displayValues['feed_in_price_per_kwh'] === 0.0 && (int) $displayValues['tariff_set_id'] === 0)) {
+$displayValues = $postedValues !== null ? $postedValues : $study['values'];
+if (!$injectionInputError && ((float) $displayValues['retail_price_per_kwh'] <= 0.0 || ((float) $displayValues['feed_in_price_per_kwh'] === 0.0 && (int) $displayValues['tariff_set_id'] === 0))) {
 	$resolver = new LmdbPropalPVTariffResolver($db);
 	$suggestion = $resolver->resolveForProposal((int) $object->entity, $study['reference_date'], $study['currency_code'], $study['peak_power_kwp'], (string) $displayValues['retail_mode'], (float) $displayValues['subscription_kva']);
 	foreach (array('retail_price_per_kwh', 'feed_in_price_per_kwh', 'premium_per_kwp') as $key) {
@@ -317,6 +332,13 @@ if ($editable) {
 	print dol_escape_htmltag($phaseLabels[(string) $displayValues['connection_phase_mode']] ?? (string) $displayValues['connection_phase_mode']);
 }
 print '</td></tr>';
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVInjectionLimit'), $langs->trans('LmdbPropalPVInjectionLimitHelp'), 1, 'help').'</td><td>';
+if ($editable) {
+	print '<input class="flat maxwidth150" inputmode="decimal" name="injection_limit_kva" value="'.dol_escape_htmltag((string) ($displayValues['injection_limit_kva'] ?? '')).'"> kVA';
+} else {
+	print $displayValues['injection_limit_kva'] === null ? $langs->trans('LmdbPropalPVUnavailable') : price($displayValues['injection_limit_kva']).' kVA';
+}
+print '</td></tr>';
 lmdbpropalpvInputRow($form, 'retail_price_per_kwh', 'LmdbPropalPVRetailPrice', $displayValues['retail_price_per_kwh'], ' '.$study['currency_code'].'/kWh', $editable, '', 'MU');
 lmdbpropalpvInputRow($form, 'feed_in_price_per_kwh', 'LmdbPropalPVFeedInPrice', $displayValues['feed_in_price_per_kwh'], ' '.$study['currency_code'].'/kWh', $editable, '', 'MU');
 lmdbpropalpvInputRow($form, 'premium_per_kwp', 'LmdbPropalPVPremiumPerKwp', $displayValues['premium_per_kwp'], ' '.$study['currency_code'].'/kWc', $editable, '', 'MU');
@@ -335,15 +357,12 @@ if ($connection instanceof LmdbPropalPVConnectionPowerResult) {
 	$inverterPowerLabel = $connection->inverterNominalPowerKva === null
 		? $langs->trans('LmdbPropalPVUnavailable')
 		: price(price2num($connection->inverterNominalPowerKva, 'MT')).' kVA'.(!$connection->inverterDataComplete ? ' ('.$langs->trans('LmdbPropalPVPartialValue').')' : '');
-	$recommendedLabel = $connection->recommendedSubscribedPowerKva === null
-		? $langs->trans('LmdbPropalPVSpecificConnectionStudy')
-		: price(price2num($connection->recommendedSubscribedPowerKva, 'MT')).' kVA';
 	print '<table class="noborder centpercent">';
 	print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVConnectionPowerCheck').'</th></tr>';
 	print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVPeakPower').'</td><td>'.price(price2num($connection->peakPowerKwp, 'MT')).' kWc</td></tr>';
 	print '<tr class="oddeven"><td>'.$form->textwithpicto($langs->trans('LmdbPropalPVInverterNominalPower'), $langs->trans('LmdbPropalPVInverterNominalPowerHelp'), 1, 'help').'</td><td>'.dol_escape_htmltag($inverterPowerLabel).'</td></tr>';
 	print '<tr class="oddeven"><td>'.$form->textwithpicto($langs->trans('LmdbPropalPVConnectionReferencePower'), $langs->trans('LmdbPropalPVConnectionReferencePowerHelp'), 1, 'help').'</td><td><strong>'.price(price2num($connection->referencePowerKva, 'MT')).' kVA</strong></td></tr>';
-	print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVRecommendedSubscribedPower').'</td><td>'.dol_escape_htmltag($recommendedLabel).'</td></tr>';
+	print '<tr class="oddeven"><td>'.$langs->trans('LmdbPropalPVInjectionPowerChecked').'</td><td>'.price($connection->injectionPowerKva).' kVA</td></tr>';
 	print '<tr class="oddeven"><td>'.$langs->trans('Status').'</td><td><span class="badge '.$statusClass.'">'.dol_escape_htmltag($langs->trans($statusTranslation[$connection->status] ?? 'LmdbPropalPVConnectionStatusIncomplete')).'</span></td></tr>';
 	print '</table>';
 	foreach ($study['connection_warning_keys'] as $warningKey) {
@@ -456,6 +475,7 @@ function lmdbpropalpvAssignProposalOptions($object, array $values)
 		'retail_mode' => 'lmdbpropalpv_retail_tariff_mode',
 		'subscription_kva' => 'lmdbpropalpv_retail_subscription_kva',
 		'connection_phase_mode' => 'lmdbpropalpv_connection_phase_mode',
+		'injection_limit_kva' => 'lmdbpropalpv_injection_limit_kva',
 		'retail_price_per_kwh' => 'lmdbpropalpv_retail_price_per_kwh',
 		'feed_in_price_per_kwh' => 'lmdbpropalpv_feed_in_price_per_kwh',
 		'premium_per_kwp' => 'lmdbpropalpv_premium_per_kwp',

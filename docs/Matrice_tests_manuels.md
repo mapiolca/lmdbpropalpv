@@ -101,3 +101,15 @@ Ces scénarios restent à exécuter sur une instance réelle. Les simulations au
 | API | lecture native de l’extrafield | valeur lisible selon l’accès natif au devis ; écritures API et leur verrouillage non étendus par cette fonctionnalité |
 | Non-régression | génération des deux PDF PV et avertissement d’étude incomplète | parcours antérieur conservé, aucune qualification imprimée |
 | Compatibilité | Dolibarr 20 / PHP 8.0 puis versions exactes du parc, avec version Multicompany relevée | scénarios ci-dessus vérifiés sans extrapolation à toute la plage v20+ |
+
+## Injection monophasée — version 1.1.1
+
+- Réactiver deux fois le module dans deux entités : extrafield masqué créé sans perte de réglage ni remise à zéro des limites existantes.
+- Devis 7,14 kWc / 7 kVA onduleurs / 6 kVA abonnement : sans limite, alerte monophasée interne ; limite déclarée 6 kVA, Pmax reste 7 et injection contrôlée 6, sans suggestion d’abonnement 9.
+- Limite vide, zéro, 6, 6,01, négative, non numérique : distinguer absence et zéro ; rejeter les entrées invalides avant toute écriture.
+- En triphasé Tarif Bleu, 20 kVA injectés ne sont pas plafonnés automatiquement à 6 kVA ; rappel d’équilibrage présent.
+- Sauvegarder, recharger les tarifs et panneaux : limite et phase préservées ; devis validé en lecture seule.
+- Utilisateurs sans droits, administrateur sans droits métier, mauvais tiers externe, mauvaise entité et POST sans token : refus côté serveur.
+- Générer les deux PDF : aucun diagnostic, alerte, suggestion d’abonnement ou limite d’injection sur la couverture ; étude financière, signature, pieds et corps commercial conservés.
+- Devis partagé : lecture depuis une autre entité selon le partage natif, limite du devis propriétaire conservée.
+- Écrêtement : vérifier que les hypothèses de production saisies intègrent les pertes étudiées ; aucune réduction annuelle automatique par le ratio 6/Pmax.
