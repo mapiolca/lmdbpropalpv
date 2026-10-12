@@ -28,3 +28,6 @@ jobs:
 
     - name: Complex-site qualification
       run: php test/run_complex_site_tests.php
+
+    - name: PDF connection visibility
+      run: php test/run_pdf_connection_tests.php

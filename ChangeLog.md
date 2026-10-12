@@ -4,7 +4,7 @@
 
 - Distinction entre Pmax installée et puissance injectée, avec une limite déclarée facultative conservée dans un extrafield du devis ; zéro représente une installation sans injection.
 - Contrôle des 6 kVA appliqué au monophasé, sans plafonnement automatique du Tarif Bleu ni suggestion d’augmentation de l’abonnement en soutirage.
-- Suppression du diagnostic de raccordement dans les deux PDF clients ; maintien dans l’onglet interne avec rappel des limites du calcul annuel face à l’écrêtement.
+- Affichage facultatif du diagnostic de raccordement dans les deux PDF clients, piloté par un switch natif par entité et désactivé par défaut ; maintien dans l’onglet interne avec rappel des limites du calcul annuel face à l’écrêtement.
 - Contrôles directs des droits module et proposition dans l’onglet financier, sans élévation administrateur implicite.
 - Réactiver le module par entité après mise à jour pour créer le nouvel extrafield, sans modifier les limites ou réglages des devis existants.
 

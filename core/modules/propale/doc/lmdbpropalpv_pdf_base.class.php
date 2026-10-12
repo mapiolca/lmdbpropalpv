@@ -459,7 +459,66 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFont('', '', 8);
 		$pdf->SetXY($this->marge_gauche, 193);
 		$pdf->MultiCell(185, 5, $outputlangs->convToOutputCharset($outputlangs->transnoentities('LmdbPropalPVFinancialNotice')), 0, 'L');
+		if ((int) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_PDF_CONNECTION_CHECK', '0', (int) $object->entity) === 1) {
+			$this->drawConnectionCheck($pdf, $outputlangs, $study, $accent);
+		}
 
+	}
+
+	/**
+	 * Draw the optional internal connection diagnostic on both proposal models.
+	 *
+	 * @param array{connection_result:LmdbPropalPVConnectionPowerResult,connection_warning_keys:list<string>,connection_product_refs:list<string>} $study Study
+	 * @param array{0:int,1:int,2:int} $accent Accent color
+	 * @return void
+	 */
+	private function drawConnectionCheck($pdf, $outputlangs, array $study, array $accent)
+	{
+		$connection = $study['connection_result'];
+		$statusTranslation = array(
+			LmdbPropalPVConnectionPowerResult::STATUS_COMPLIANT => 'LmdbPropalPVConnectionStatusCompliant',
+			LmdbPropalPVConnectionPowerResult::STATUS_INCREASE_TO_CHECK => 'LmdbPropalPVConnectionStatusIncreaseToCheck',
+			LmdbPropalPVConnectionPowerResult::STATUS_PHASE_INCOMPATIBLE => 'LmdbPropalPVConnectionStatusPhaseIncompatible',
+			LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE => 'LmdbPropalPVConnectionStatusIncomplete',
+		);
+		$phaseKey = $connection->phaseMode === 'three' ? 'LmdbPropalPVThreePhase' : 'LmdbPropalPVSinglePhase';
+		$inverterPower = $connection->inverterNominalPowerKva === null
+			? $outputlangs->transnoentities('LmdbPropalPVUnavailable')
+			: price(price2num($connection->inverterNominalPowerKva, 'MT'), 0, $outputlangs).' kVA'.(!$connection->inverterDataComplete ? ' ('.$outputlangs->transnoentities('LmdbPropalPVPartialValue').')' : '');
+		$details = $outputlangs->transnoentities('LmdbPropalPVPeakPower').' : '.price(price2num($connection->peakPowerKwp, 'MT'), 0, $outputlangs).' kWc';
+		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVInverterNominalPower').' : '.$inverterPower;
+		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVConnectionReferencePower').' : '.price(price2num($connection->referencePowerKva, 'MT'), 0, $outputlangs).' kVA';
+		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVSubscribedPower').' : '.price(price2num($connection->subscribedPowerKva, 'MT'), 0, $outputlangs).' kVA';
+		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVConnectionPhaseMode').' : '.$outputlangs->transnoentities($phaseKey);
+		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVInjectionPowerChecked').' : '.price($connection->injectionPowerKva, 0, $outputlangs).' kVA';
+
+		$warnings = array();
+		foreach ($study['connection_warning_keys'] as $warningKey) {
+			$references = implode(', ', $study['connection_product_refs']);
+			$warnings[] = $references !== '' && $warningKey === 'LmdbPropalPVConnectionInverterDataUnavailable'
+				? $outputlangs->transnoentities($warningKey, $references)
+				: $outputlangs->transnoentities($warningKey);
+		}
+
+		$pdf->SetFillColor(255, 248, 218);
+		$pdf->SetDrawColor($accent[0], $accent[1], $accent[2]);
+		if (method_exists($pdf, 'RoundedRect')) {
+			$pdf->RoundedRect($this->marge_gauche, 211, 185, 53, 2, '1111', 'DF');
+		} else {
+			$pdf->Rect($this->marge_gauche, 211, 185, 53, 'DF');
+		}
+		$pdf->SetTextColor(65, 65, 65);
+		$pdf->SetFont('', 'B', 8.5);
+		$pdf->SetXY($this->marge_gauche + 5, 216);
+		$pdf->MultiCell(175, 4, $outputlangs->convToOutputCharset($outputlangs->transnoentities('LmdbPropalPVConnectionPowerCheck').' — '.$outputlangs->transnoentities($statusTranslation[$connection->status] ?? 'LmdbPropalPVConnectionStatusIncomplete')), 0, 'L');
+		$pdf->SetFont('', '', 6.6);
+		$pdf->SetXY($this->marge_gauche + 5, 225);
+		$pdf->MultiCell(175, 3.5, $outputlangs->convToOutputCharset($details), 0, 'L');
+		if (!empty($warnings)) {
+			$pdf->SetFont('', '', 6.2);
+			$pdf->SetXY($this->marge_gauche + 5, 239);
+			$pdf->MultiCell(175, 3.2, $outputlangs->convToOutputCharset(implode(' ', $warnings)), 0, 'L');
+		}
 	}
 
 	/** @return void */

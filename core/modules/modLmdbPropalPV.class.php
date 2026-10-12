@@ -45,6 +45,7 @@ class modLmdbPropalPV extends DolibarrModules
 		$this->warnings_activation_ext = array();
 
 		$this->const = array(
+			array('LMDBPROPALPV_PDF_CONNECTION_CHECK', 'chaine', '0', 'Display connection check in proposal PDFs', 0, 'current', 0),
 			array('LMDBPROPALPV_COMPLEX_SITE_ENABLED', 'chaine', '0', 'Enable complex-site proposal qualification', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_SELF_CONSUMPTION_PCT', 'chaine', '68', 'Default self-consumption percentage', 0, 'current', 0),
 			array('LMDBPROPALPV_DEFAULT_FIRST_YEAR_DEGRADATION_PCT', 'chaine', '0.45', 'Default first-year panel degradation percentage', 0, 'current', 0),

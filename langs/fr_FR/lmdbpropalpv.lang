@@ -244,3 +244,5 @@ LmdbPropalPVInjectionLimitHelp=Limite technique d’injection au réseau, en kVA
 LmdbPropalPVInjectionPowerChecked=Puissance d’injection contrôlée
 LmdbPropalPVInvalidInjectionLimit=La limite d’injection doit être un nombre fini positif ou nul ; laisser vide si aucune limitation n’est confirmée.
 LmdbPropalPVConnectionInjectionLimited=Le contrôle tient compte de la limite d’injection déclarée. Vérifier le dispositif et son réglage avec l’installateur et Enedis. Le calcul financier annuel ne simule pas l’écrêtement : la production saisie doit intégrer les pertes éventuelles, pour chaque scénario avec ou sans batterie.
+LmdbPropalPVShowConnectionCheckPdf=Afficher le contrôle de raccordement dans les PDF
+LmdbPropalPVShowConnectionCheckPdfHelp=Désactivé par défaut. Affiche le diagnostic technique et ses alertes dans les deux modèles PV. Le réglage de l’entité propriétaire du devis est utilisé ; le contrôle reste toujours disponible dans l’onglet interne. Régénérer le PDF pour appliquer le changement.

@@ -244,3 +244,5 @@ LmdbPropalPVInjectionLimitHelp=Technical grid export limit in kVA, to be entered
 LmdbPropalPVInjectionPowerChecked=Checked export power
 LmdbPropalPVInvalidInjectionLimit=The export limit must be a finite non-negative number; leave empty if no limitation is confirmed.
 LmdbPropalPVConnectionInjectionLimited=The check uses the declared export limit. Verify the device and its settings with the installer and Enedis. Annual financial calculations do not simulate clipping: the entered production must account for any losses, for each scenario with or without a battery.
+LmdbPropalPVShowConnectionCheckPdf=Show the connection check in PDFs
+LmdbPropalPVShowConnectionCheckPdfHelp=Disabled by default. Displays the technical diagnostic and its warnings in both PV models. Uses the proposal owner entity setting; the check always remains available in the internal tab. Regenerate the PDF to apply a change.

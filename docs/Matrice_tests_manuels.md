@@ -110,6 +110,10 @@ Ces scénarios restent à exécuter sur une instance réelle. Les simulations au
 - En triphasé Tarif Bleu, 20 kVA injectés ne sont pas plafonnés automatiquement à 6 kVA ; rappel d’équilibrage présent.
 - Sauvegarder, recharger les tarifs et panneaux : limite et phase préservées ; devis validé en lecture seule.
 - Utilisateurs sans droits, administrateur sans droits métier, mauvais tiers externe, mauvaise entité et POST sans token : refus côté serveur.
-- Générer les deux PDF : aucun diagnostic, alerte, suggestion d’abonnement ou limite d’injection sur la couverture ; étude financière, signature, pieds et corps commercial conservés.
+- Générer les deux PDF avec le réglage absent ou OFF : aucun diagnostic ni alerte sur la couverture. Avec le réglage ON : diagnostic et alertes présents, Pmax et injection distinguées, aucune suggestion d’abonnement. Étude financière, signature, pieds et corps commercial conservés.
+- Switch natif PDF : contrôler administrateur, token, entité et repli sans JavaScript ; activation/désactivation/réactivation conserve ON et OFF.
+- Devis partagé A vu depuis B : PDF selon le réglage de A, même si celui de B est opposé.
 - Devis partagé : lecture depuis une autre entité selon le partage natif, limite du devis propriétaire conservée.
 - Écrêtement : vérifier que les hypothèses de production saisies intègrent les pertes étudiées ; aucune réduction annuelle automatique par le ratio 6/Pmax.
+
+Validation automatisée ciblée : `php test/run_pdf_connection_tests.php` exécute le code réel de couverture des deux modèles avec enregistrement des appels PDF. Cas couverts : constante absente, OFF, ON et réglage propriétaire opposé à celui de consultation. Il s’agit d’une simulation du rendu textuel et des constantes SQL, pas d’une génération TCPDF ni d’une validation visuelle.
