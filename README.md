@@ -2,7 +2,7 @@
 
 « Propositions commerciales PV » est un module externe Dolibarr ajoutant une étude de retour sur investissement photovoltaïque aux propositions commerciales et deux modèles PDF modernes prêts à signer. Sa clé technique reste `lmdbpropalpv`.
 
-Version `1.1.0` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
+Version `1.1.1` — identifiant Dolibarr `450010` — famille « Les Métiers du Bâtiment ».
 
 ## Compatibilité
 
@@ -41,7 +41,9 @@ Pour chaque entité, la première activation ajoute et active « PV Signature il
 
 L’étude est accessible depuis l’onglet « Étude financière PV » d’une proposition commerciale. La puissance-crête est lue exclusivement depuis PowerPlantPV ; la production annuelle reste une saisie obligatoire. Les hypothèses et le barème chargé sont enregistrés comme un instantané du devis.
 
-Le module calcule la Pmax de raccordement comme le minimum entre la puissance-crête et la somme des puissances AC nominales des produits ONDULE. Les onduleurs placés directement dans le devis et ceux inclus dans des kits Dolibarr sont cumulés ; chaque quantité de composant est multipliée par la quantité du kit et les kits imbriqués sont développés récursivement. Il propose monophasé ou triphasé, compare la Pmax à la puissance souscrite et affiche des alertes informatives dans l’onglet et les deux PDF. Une donnée onduleur absente provoque une alerte indiquant sa référence et un repli prudent sur la puissance-crête, jamais une erreur fatale.
+Le module calcule la Pmax installée comme le minimum entre la puissance-crête et la somme des puissances AC nominales des produits ONDULE, y compris les kits imbriqués. Le contrôle interne distingue cette Pmax de la puissance injectée : une limite d’injection déclarée peut réduire la puissance contrôlée, sans modifier Pmax. Une limite vide ne suppose aucun bridage ; zéro désigne une installation sans injection. La limite de 6 kVA concerne le raccordement monophasé, pas tous les contrats Tarif Bleu. Une Pmax supérieure à la puissance souscrite en soutirage ne provoque plus de suggestion automatique d’augmentation d’abonnement. Les données onduleur incomplètes restent signalées. Ce diagnostic reste dans l’onglet interne. Le réglage **Afficher le contrôle de raccordement dans les PDF**, désactivé par défaut, permet de l’inclure dans les deux PDF clients. Le switch natif est propre à chaque entité et le PDF utilise le réglage de l’entité propriétaire du devis, y compris lors d’une consultation depuis une autre entité. Régénérer les PDF pour appliquer un changement ; les documents existants ne sont pas modifiés.
+
+Après installation de la version 1.1.1, réactiver le module dans les entités concernées pour créer l’extrafield natif masqué `lmdbpropalpv_injection_limit_kva`. Les anciens devis conservent une limite vide et leurs choix de phase ; aucun bridage n’est inventé. Le dispositif et son réglage doivent être vérifiés par l’installateur avec Enedis. Le calcul financier annuel ne simule pas l’écrêtement : les hypothèses de production doivent intégrer ses pertes éventuelles. Un profil temporel de production, de consommation et de stockage serait nécessaire pour quantifier ces pertes ; appliquer arbitrairement le ratio 6/Pmax à la production annuelle serait incorrect.
 
 Les boutons « Recharger le barème applicable » et « Recharger les caractéristiques panneaux » sont les seules actions qui remplacent explicitement leurs snapshots respectifs. Le surcoût issu d’un devis batterie est lui aussi figé ; le bouton « Actualiser depuis le devis batterie » est la seule action qui le recharge. Si le devis source disparaît ou devient inaccessible, le snapshot reste utilisable avec un avertissement. Une mise à jour du module, des barèmes ou des fiches produits ne modifie jamais un devis existant.
 

@@ -28,18 +28,18 @@
 | Raccordement kit | un kit contient deux onduleurs de 3 kVA et le devis contient trois kits | puissance du kit égale à 6 kVA et contribution au devis égale à 18 kVA |
 | Raccordement kit | onduleur direct, plusieurs kits et même onduleur présent par plusieurs compositions | toutes les quantités effectives sont cumulées une seule fois par occurrence métier |
 | Raccordement kit imbriqué | un kit contient deux sous-kits contenant chacun trois onduleurs | multiplication récursive exacte de la quantité du devis et de chaque niveau de composition |
-| Raccordement kit incomplet | un onduleur inclus dans un kit n’a pas de puissance AC nominale | référence exacte affichée dans l’onglet et les deux PDF, statut incomplet et repli sur la puissance-crête |
+| Raccordement kit incomplet | un onduleur inclus dans un kit n’a pas de puissance AC nominale | référence exacte affichée dans l’onglet, statut incomplet et repli sur la puissance-crête ; reprise dans les PDF uniquement si le réglage de leur entité propriétaire est ON |
 | Raccordement | puissance nominale, table ou colonne absente | statut « Vérification incomplète », repli sur la puissance-crête et aucune erreur fatale |
-| Puissance souscrite | Pmax 10 kVA avec 9 kVA souscrits, puis Pmax 36,1 kVA | alerte informative et suggestions respectives de 12 et 37 kVA |
-| Puissance souscrite | Pmax supérieure à 250 kVA | aucune suggestion automatique et demande d’étude spécifique |
-| Phases | monophasé à 6 puis 6,01 kVA | premier cas accepté, second signalé comme raccordement à revoir |
-| Phases | triphasé jusqu’à 36 kVA puis au-delà | rappel 12 kVA/phase et déséquilibre 6 kVA, puis orientation vers une étude BT dédiée |
+| Puissance souscrite | Pmax 10 kVA avec 9 kVA souscrits, puis Pmax 36,1 kVA sans limite déclarée | aucune suggestion d’augmentation de l’abonnement ; étude spécifique pour l’injection supérieure à 36 kVA |
+| Injection | puissance contrôlée supérieure à 250 kVA sans limite déclarée | aucune suggestion d’abonnement, orientation vers une étude BT dédiée |
+| Phases | injection contrôlée monophasée à 6 puis 6,01 kVA | premier cas accepté, second signalé comme raccordement à revoir |
+| Phases | injection contrôlée triphasée jusqu’à 36 kVA puis au-delà | rappel 12 kVA/phase et déséquilibre 6 kVA, puis orientation vers une étude BT dédiée |
 | Snapshot raccordement | devis neuf, sauvegarde, duplication et devis validé | type de raccordement proposé puis conservé ; lecture seule après validation |
 | Devise | devis dans une devise sans barème | étude incomplète, message explicite |
 | PDF illustré | aucune, quelques et toutes les photos produits | colonne propre, aucun emplacement cassé |
 | PDF épuré | produits avec photos | aucune colonne image |
 | PDF | lignes et notes longues, plusieurs pages | pas de chevauchement avec le pied |
-| PDF raccordement | générer les deux modèles avec contrôle conforme, alerte et vérification incomplète | même encadré jaune, valeurs et messages cohérents avec l’onglet |
+| PDF raccordement | générer les deux modèles avec réglage absent/OFF puis ON et contrôle sans dépassement, alerte et vérification incomplète | absent/OFF : aucun encadré ni alerte ; ON : encadré et messages cohérents avec l’onglet, selon l’entité propriétaire |
 | Modèles PDF | ouvrir l’administration native en français puis en anglais | noms traduits « PV Signature illustré/épuré » et équivalents anglais, identifiants techniques inchangés |
 | Métadonnées PDF | mettre à jour une installation contenant les anciennes lignes avec `description` renseignée | libellés traduits visibles, `description` vidée, aucun modèle désactivé ou réactivé et modèle par défaut inchangé |
 | Corps commercial configurable | sélectionner successivement Cyan puis un autre modèle PDF actif dans chaque entité | le corps commercial provient du modèle choisi et les pages PV sont assemblées autour de celui-ci |
@@ -54,7 +54,7 @@
 | Multicompany | deux entités avec couleurs et devis distincts | réglages et documents isolés |
 | Sélecteur de couleur | modifier les quatre couleurs avec JavaScript activé puis avec `MAIN_USE_HTML5_COLOR_SELECTOR` actif | composant natif affiché, valeur sauvegardée en `#RRGGBB`, couleur principale conservée pour l’habillage du PDF et couleurs de scénario distinctes reprises dans l’onglet et les PDF |
 | Multicompany | produits MODULE partagés, caractéristiques et défauts différents | résolution conforme aux entités PowerPlantPV accessibles et défaut de l’entité propriétaire du devis |
-| Droits | administrateur sans droits fins | accès complet dans son périmètre |
+| Droits de l’onglet financier | administrateur sans droits module ou proposition | résultat de hasRight respecté : lecture ou écriture refusée selon le droit manquant, sans élévation implicite |
 | Droits | lecture seule | consultation, aucune écriture |
 | Droits | sans droit | accès refusé |
 | Compatibilité | Dolibarr 20 / PHP 8.0 | activation et pages sans erreur fatale |
@@ -101,3 +101,30 @@ Ces scénarios restent à exécuter sur une instance réelle. Les simulations au
 | API | lecture native de l’extrafield | valeur lisible selon l’accès natif au devis ; écritures API et leur verrouillage non étendus par cette fonctionnalité |
 | Non-régression | génération des deux PDF PV et avertissement d’étude incomplète | parcours antérieur conservé, aucune qualification imprimée |
 | Compatibilité | Dolibarr 20 / PHP 8.0 puis versions exactes du parc, avec version Multicompany relevée | scénarios ci-dessus vérifiés sans extrapolation à toute la plage v20+ |
+
+## Injection monophasée — version 1.1.1
+
+- Réactiver deux fois le module dans deux entités : extrafield masqué créé sans perte de réglage ni remise à zéro des limites existantes.
+- Devis 7,14 kWc / 7 kVA onduleurs / 6 kVA abonnement : sans limite, alerte monophasée interne ; limite déclarée 6 kVA, Pmax reste 7 et injection contrôlée 6, sans suggestion d’abonnement 9.
+- Limite vide, zéro, 6, 6,01, négative, non numérique : distinguer absence et zéro ; rejeter les entrées invalides avant toute écriture.
+- En triphasé Tarif Bleu, 20 kVA injectés ne sont pas plafonnés automatiquement à 6 kVA ; rappel d’équilibrage présent.
+- Sauvegarder, recharger les tarifs et panneaux : limite et phase préservées ; devis validé en lecture seule.
+- Utilisateurs sans droits, administrateur sans droits métier, mauvais tiers externe, mauvaise entité et POST sans token : refus côté serveur.
+- Générer les deux PDF avec le réglage absent ou OFF : aucun diagnostic ni alerte sur la couverture. Avec le réglage ON : diagnostic et alertes présents, Pmax et injection distinguées, aucune suggestion d’abonnement. Étude financière, signature, pieds et corps commercial conservés.
+- Switch natif PDF : contrôler administrateur, token, entité et repli sans JavaScript ; activation/désactivation/réactivation conserve ON et OFF.
+- Devis partagé A vu depuis B : PDF selon le réglage de A, même si celui de B est opposé.
+- Devis partagé : lecture depuis une autre entité selon le partage natif, limite du devis propriétaire conservée.
+- Écrêtement : vérifier que les hypothèses de production saisies intègrent les pertes étudiées ; aucune réduction annuelle automatique par le ratio 6/Pmax.
+
+Validation automatisée ciblée : `php test/run_pdf_connection_tests.php` exécute le code réel de couverture des deux modèles avec enregistrement des appels PDF. Cas couverts : constante absente, OFF, ON et réglage propriétaire opposé à celui de consultation. Il s’agit d’une simulation du rendu textuel et des constantes SQL, pas d’une génération TCPDF ni d’une validation visuelle.
+
+## Conservation des champs batterie après erreur — version 1.1.1
+
+- Étude enregistrée avec batterie 7 et surcoût 1 000 € : choisir le devis compatible 22 de 3 500 €, puis saisir une limite d’injection invalide. Aucun enregistrement ; sélection 22, surcoût 3 500 €, champ verrouillé, total TTC courant + 3 500 € et bouton d’actualisation conservés.
+- Corriger la limite puis enregistrer : sélection et montant issus du résolveur persistés, redirection vers une URL de lecture ; rafraîchissement sans nouvelle écriture.
+- Retirer le devis lié et saisir un montant manuel, vide puis zéro : aucun verrouillage ni bouton d’actualisation lié ; montant conservé, vide affiché non configuré et zéro affiché comme TTC courant.
+- Actualiser explicitement un devis lié puis rencontrer une erreur d’injection : montant résolu conservé au rendu. Corriger puis répéter l’actualisation pour enregistrer le snapshot actualisé ; une sauvegarde ordinaire du même devis lié conserve le snapshot déjà enregistré.
+- Identifiant de devis batterie d’un autre tiers, d’une autre entité ou devise, ou inexistant : refus serveur, aucune écriture.
+- Les courbes et projections affichent l’étude enregistrée pendant une erreur ; le total du bloc batterie suit les valeurs du formulaire.
+
+`php test/run_battery_validation_tests.php` exerce le traitement POST et le rendu réels de la page, les méthodes réelles d’éligibilité du devis batterie et les transitions de sauvegarde/redirection. Bootstrap, SQL, persistance, formatage et appels HTTP sont simulés ; ce test ne remplace pas la recette sur une instance Dolibarr/Multicompany.

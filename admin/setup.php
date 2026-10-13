@@ -19,15 +19,21 @@ if (empty($user->admin)) {
 
 $baseProposalModelOptions = lmdbpropalpvGetBaseProposalModelOptions($db, (int) $conf->entity);
 $action = GETPOST('action', 'aZ09');
-if (in_array($action, array('set_LMDBPROPALPV_COMPLEX_SITE_ENABLED', 'del_LMDBPROPALPV_COMPLEX_SITE_ENABLED'), true)) {
+$switchActions = array(
+	'set_LMDBPROPALPV_COMPLEX_SITE_ENABLED' => array('LMDBPROPALPV_COMPLEX_SITE_ENABLED', '1'),
+	'del_LMDBPROPALPV_COMPLEX_SITE_ENABLED' => array('LMDBPROPALPV_COMPLEX_SITE_ENABLED', '0'),
+	'set_LMDBPROPALPV_PDF_CONNECTION_CHECK' => array('LMDBPROPALPV_PDF_CONNECTION_CHECK', '1'),
+	'del_LMDBPROPALPV_PDF_CONNECTION_CHECK' => array('LMDBPROPALPV_PDF_CONNECTION_CHECK', '0'),
+);
+if (isset($switchActions[$action])) {
 	// Native constant switch fallback when JavaScript is disabled.
 	$token = GETPOST('token', 'alpha');
 	if (!is_string($token) || $token === '' || currentToken() === '' || !hash_equals(currentToken(), $token)
 		|| GETPOSTINT('entity') !== (int) $conf->entity) {
 		accessforbidden();
 	}
-	$value = $action === 'set_LMDBPROPALPV_COMPLEX_SITE_ENABLED' ? '1' : '0';
-	if (dolibarr_set_const($db, 'LMDBPROPALPV_COMPLEX_SITE_ENABLED', $value, 'chaine', 0, '', (int) $conf->entity) <= 0) {
+	$switchSetting = $switchActions[$action];
+	if (dolibarr_set_const($db, $switchSetting[0], $switchSetting[1], 'chaine', 0, '', (int) $conf->entity) <= 0) {
 		setEventMessages($db->lasterror(), null, 'errors');
 	} else {
 		setEventMessages($langs->trans('SetupSaved'), null, 'mesgs');
@@ -147,6 +153,9 @@ print '<table class="noborder centpercent">';
 print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVOptionalFeatures').'</th></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVEnableComplexSite'), $langs->trans('LmdbPropalPVEnableComplexSiteHelp'), 1, 'help').'</td><td>';
 print ajax_constantonoff('LMDBPROPALPV_COMPLEX_SITE_ENABLED', array(), (int) $conf->entity, 0, 0, 1, 2, 0, 1);
+print '</td></tr>';
+print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVShowConnectionCheckPdf'), $langs->trans('LmdbPropalPVShowConnectionCheckPdfHelp'), 1, 'help').'</td><td>';
+print ajax_constantonoff('LMDBPROPALPV_PDF_CONNECTION_CHECK', array(), (int) $conf->entity, 0, 0, 1, 2, 0, 1);
 print '</td></tr></table><br>';
 
 print '<div class="info">'.$langs->trans('LmdbPropalPVDefaultAssumptionsHelp').'</div><br>';

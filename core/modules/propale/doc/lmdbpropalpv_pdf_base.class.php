@@ -459,12 +459,14 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$pdf->SetFont('', '', 8);
 		$pdf->SetXY($this->marge_gauche, 193);
 		$pdf->MultiCell(185, 5, $outputlangs->convToOutputCharset($outputlangs->transnoentities('LmdbPropalPVFinancialNotice')), 0, 'L');
-		$this->drawConnectionCheck($pdf, $outputlangs, $study, $accent);
+		if ((int) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_PDF_CONNECTION_CHECK', '0', (int) $object->entity) === 1) {
+			$this->drawConnectionCheck($pdf, $outputlangs, $study, $accent);
+		}
 
 	}
 
 	/**
-	 * Draw the same non-blocking connection diagnostic on both proposal models.
+	 * Draw the optional internal connection diagnostic on both proposal models.
 	 *
 	 * @param array{connection_result:LmdbPropalPVConnectionPowerResult,connection_warning_keys:list<string>,connection_product_refs:list<string>} $study Study
 	 * @param array{0:int,1:int,2:int} $accent Accent color
@@ -480,9 +482,6 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 			LmdbPropalPVConnectionPowerResult::STATUS_INCOMPLETE => 'LmdbPropalPVConnectionStatusIncomplete',
 		);
 		$phaseKey = $connection->phaseMode === 'three' ? 'LmdbPropalPVThreePhase' : 'LmdbPropalPVSinglePhase';
-		$recommended = $connection->recommendedSubscribedPowerKva === null
-			? $outputlangs->transnoentities('LmdbPropalPVSpecificConnectionStudy')
-			: price(price2num($connection->recommendedSubscribedPowerKva, 'MT'), 0, $outputlangs).' kVA';
 		$inverterPower = $connection->inverterNominalPowerKva === null
 			? $outputlangs->transnoentities('LmdbPropalPVUnavailable')
 			: price(price2num($connection->inverterNominalPowerKva, 'MT'), 0, $outputlangs).' kVA'.(!$connection->inverterDataComplete ? ' ('.$outputlangs->transnoentities('LmdbPropalPVPartialValue').')' : '');
@@ -491,7 +490,7 @@ abstract class LmdbPropalPVPdfBase extends pdf_cyan
 		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVConnectionReferencePower').' : '.price(price2num($connection->referencePowerKva, 'MT'), 0, $outputlangs).' kVA';
 		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVSubscribedPower').' : '.price(price2num($connection->subscribedPowerKva, 'MT'), 0, $outputlangs).' kVA';
 		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVConnectionPhaseMode').' : '.$outputlangs->transnoentities($phaseKey);
-		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVRecommendedSubscribedPower').' : '.$recommended;
+		$details .= ' · '.$outputlangs->transnoentities('LmdbPropalPVInjectionPowerChecked').' : '.price($connection->injectionPowerKva, 0, $outputlangs).' kVA';
 
 		$warnings = array();
 		foreach ($study['connection_warning_keys'] as $warningKey) {
