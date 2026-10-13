@@ -31,3 +31,6 @@ jobs:
 
     - name: PDF connection visibility
       run: php test/run_pdf_connection_tests.php
+
+    - name: Battery validation recovery
+      run: php test/run_battery_validation_tests.php

@@ -221,13 +221,18 @@ print '</div></div><div class="clearboth"></div><br>';
 
 $withoutBatteryColor = lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_WITHOUT_BATTERY_COLOR', '#16324F', (int) $object->entity);
 $batteryColor = lmdbpropalpvGetEntityStringConstant($db, 'LMDBPROPALPV_BATTERY_COLOR', '#2E7D32', (int) $object->entity);
+$displayBatteryProposalId = (int) $displayValues['battery_proposal_id'];
+$displayBatteryExtraInvestment = $displayValues['battery_extra_investment_ttc'] !== null && $displayValues['battery_extra_investment_ttc'] !== ''
+	? (float) $displayValues['battery_extra_investment_ttc'] : null;
+$displayBatteryInvestment = $displayBatteryExtraInvestment !== null
+	? (float) price2num($study['investment_ttc'] + $displayBatteryExtraInvestment, 'MT') : null;
 $batteryOptionsData = $service->getBatteryProposalOptions($object);
 $batterySelectOptions = array();
 foreach ($batteryOptionsData as $batteryOptionId => $batteryOption) {
 	$batterySelectOptions[$batteryOptionId] = $batteryOption['label'].' - '.price($batteryOption['amount_ttc'], 0, $langs, 1, -1, -1, $study['currency_code']);
 }
-if ((int) $study['battery_proposal_id'] > 0 && !isset($batterySelectOptions[(int) $study['battery_proposal_id']])) {
-	$batterySelectOptions[(int) $study['battery_proposal_id']] = '#'.((int) $study['battery_proposal_id']).' - '.$langs->trans('LmdbPropalPVUnavailable');
+if ($displayBatteryProposalId > 0 && !isset($batterySelectOptions[$displayBatteryProposalId])) {
+	$batterySelectOptions[$displayBatteryProposalId] = '#'.$displayBatteryProposalId.' - '.$langs->trans('LmdbPropalPVUnavailable');
 }
 
 print '<div class="lmdbpropalpv-study">';
@@ -253,14 +258,18 @@ print '<tr class="liste_titre"><th colspan="2">'.$langs->trans('LmdbPropalPVSelf
 lmdbpropalpvInputRow($form, 'battery_self_consumption_pct', 'LmdbPropalPVSelfConsumptionRateWithBattery', $displayValues['battery_self_consumption_pct'] ?? '', ' %', $editable, '', 'MT');
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVBatteryProposal').'</td><td>';
 if ($editable) {
-	print $form->selectarray('battery_proposal_id', $batterySelectOptions, (int) $study['battery_proposal_id'], 1, 0, 0, '', 0, 0, 0, '', 'minwidth300');
+	print $form->selectarray('battery_proposal_id', $batterySelectOptions, $displayBatteryProposalId, 1, 0, 0, '', 0, 0, 0, '', 'minwidth300');
 	print ajax_combobox('battery_proposal_id');
-} elseif ((int) $study['battery_proposal_id'] > 0) {
+} elseif ($displayBatteryProposalId > 0) {
 	$batteryProposal = new Propal($db);
-	if ($batteryProposal->fetch((int) $study['battery_proposal_id']) > 0 && lmdbpropalpvCanDo($user, 'read', $batteryProposal)) {
+	$batteryProposalResult = $batteryProposal->fetch($displayBatteryProposalId);
+	$batteryProposalCurrency = !empty($batteryProposal->multicurrency_code) ? (string) $batteryProposal->multicurrency_code : (string) $conf->currency;
+	if ($batteryProposalResult > 0 && $user->hasRight('lmdbpropalpv', 'study', 'read') && $user->hasRight('propal', 'lire')
+		&& (int) $batteryProposal->entity === (int) $object->entity && (int) $batteryProposal->socid === (int) $object->socid
+		&& $batteryProposalCurrency === $study['currency_code']) {
 		print $batteryProposal->getNomUrl(1);
 	} else {
-		print '<span class="opacitymedium">#'.((int) $study['battery_proposal_id']).'</span>';
+		print '<span class="opacitymedium">#'.$displayBatteryProposalId.'</span>';
 	}
 } else {
 	print '<span class="opacitymedium">'.$langs->trans('LmdbPropalPVNoBatteryProposal').'</span>';
@@ -268,19 +277,19 @@ if ($editable) {
 print '</td></tr>';
 print '<tr class="oddeven"><td class="titlefield">'.$form->textwithpicto($langs->trans('LmdbPropalPVBatteryExtraInvestment'), $langs->trans('LmdbPropalPVBatteryExtraInvestmentHelp'), 1, 'help').'</td><td>';
 if ($editable) {
-	$readonlySnapshot = (int) $study['battery_proposal_id'] > 0 ? ' readonly="readonly"' : '';
-	print '<input id="battery_extra_investment_ttc" class="flat maxwidth150" inputmode="decimal" name="battery_extra_investment_ttc" value="'.dol_escape_htmltag($study['battery_extra_investment_ttc'] === null ? '' : (string) $study['battery_extra_investment_ttc']).'"'.$readonlySnapshot.'> '.dol_escape_htmltag($study['currency_code']);
-} elseif ($study['battery_extra_investment_ttc'] !== null) {
-	print price(price2num((float) $study['battery_extra_investment_ttc'], 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']);
+	$readonlySnapshot = $displayBatteryProposalId > 0 ? ' readonly="readonly"' : '';
+	print '<input id="battery_extra_investment_ttc" class="flat maxwidth150" inputmode="decimal" name="battery_extra_investment_ttc" value="'.dol_escape_htmltag($displayBatteryExtraInvestment === null ? '' : (string) $displayBatteryExtraInvestment).'"'.$readonlySnapshot.'> '.dol_escape_htmltag($study['currency_code']);
+} elseif ($displayBatteryExtraInvestment !== null) {
+	print price(price2num((float) $displayBatteryExtraInvestment, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']);
 } else {
 	print '<span class="opacitymedium">'.$langs->trans('LmdbPropalPVNotConfigured').'</span>';
 }
 print '</td></tr>';
-$batteryInvestmentDisplay = $study['battery_extra_investment_ttc'] !== null
-	? '<strong>'.price(price2num($study['battery_investment_ttc'], 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']).'</strong>'
+$batteryInvestmentDisplay = $displayBatteryExtraInvestment !== null
+	? '<strong>'.price(price2num($displayBatteryInvestment, 'MT'), 0, $langs, 1, -1, -1, $study['currency_code']).'</strong>'
 	: '<span class="opacitymedium">'.$langs->trans('LmdbPropalPVNotConfigured').'</span>';
 print '<tr class="oddeven"><td class="titlefield">'.$langs->trans('LmdbPropalPVInvestmentTtcWithBattery').'</td><td>'.$batteryInvestmentDisplay.'</td></tr>';
-if ($editable && (int) $study['battery_proposal_id'] > 0) {
+if ($editable && $displayBatteryProposalId > 0) {
 	print '<tr id="lmdbpropalpv-refresh-battery-row" class="oddeven"><td></td><td><button class="button small" type="submit" name="action" value="reload_battery_investment">'.$langs->trans('LmdbPropalPVRefreshBatteryInvestment').'</button></td></tr>';
 }
 print '</table>';
