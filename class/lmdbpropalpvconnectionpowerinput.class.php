@@ -19,12 +19,16 @@ class LmdbPropalPVConnectionPowerInput
 	/** @var bool */
 	public $inverterDataComplete;
 
-	public function __construct(float $peakPowerKwp, ?float $inverterNominalPowerKva, float $subscribedPowerKva, string $phaseMode, bool $inverterDataComplete)
+	/** @var float|null Declared export limit; null means no confirmed limitation. */
+	public $injectionLimitKva;
+
+	public function __construct(float $peakPowerKwp, ?float $inverterNominalPowerKva, float $subscribedPowerKva, string $phaseMode, bool $inverterDataComplete, ?float $injectionLimitKva = null)
 	{
 		$this->peakPowerKwp = $peakPowerKwp;
 		$this->inverterNominalPowerKva = $inverterNominalPowerKva;
 		$this->subscribedPowerKva = $subscribedPowerKva;
 		$this->phaseMode = $phaseMode;
 		$this->inverterDataComplete = $inverterDataComplete;
+		$this->injectionLimitKva = $injectionLimitKva;
 	}
 }

@@ -18,10 +18,13 @@ class LmdbPropalPVConnectionPowerResult
 	/** @var float */
 	public $referencePowerKva;
 
+	/** @var float Export power checked independently from installed Pmax. */
+	public $injectionPowerKva;
+
 	/** @var float */
 	public $subscribedPowerKva;
 
-	/** @var float|null */
+	/** @var float|null Legacy result slot, now null: import power is not inferred from Pmax. */
 	public $recommendedSubscribedPowerKva;
 
 	/** @var string */
@@ -44,6 +47,7 @@ class LmdbPropalPVConnectionPowerResult
 		$this->peakPowerKwp = $peakPowerKwp;
 		$this->inverterNominalPowerKva = $inverterNominalPowerKva;
 		$this->referencePowerKva = $referencePowerKva;
+		$this->injectionPowerKva = $referencePowerKva;
 		$this->subscribedPowerKva = $subscribedPowerKva;
 		$this->recommendedSubscribedPowerKva = $recommendedSubscribedPowerKva;
 		$this->phaseMode = $phaseMode;

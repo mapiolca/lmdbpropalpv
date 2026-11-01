@@ -1,5 +1,14 @@
 # ChangeLog
 
+## 1.1.1 - 2026-10-12
+
+- Distinction entre Pmax installée et puissance injectée, avec une limite déclarée facultative conservée dans un extrafield du devis ; zéro représente une installation sans injection.
+- Contrôle des 6 kVA appliqué au monophasé, sans plafonnement automatique du Tarif Bleu ni suggestion d’augmentation de l’abonnement en soutirage.
+- Affichage facultatif du diagnostic de raccordement dans les deux PDF clients, piloté par un switch natif par entité et désactivé par défaut ; maintien dans l’onglet interne avec rappel des limites du calcul annuel face à l’écrêtement.
+- Contrôles directs des droits module et proposition dans l’onglet financier, sans élévation administrateur implicite.
+- Conservation de la sélection batterie, du surcoût et des contrôles associés après une limite d’injection invalide ; documentation et recette alignées sur le comportement 1.1.1.
+- Réactiver le module par entité après mise à jour pour créer le nouvel extrafield, sans modifier les limites ou réglages des devis existants.
+
 ## 1.1.0 - 2026-09-30
 
 - Qualification « Chantier Complexe » propre à chaque devis, enregistrée dès le clic sur un switch natif sans cadre de bouton et utilisable sans JavaScript.

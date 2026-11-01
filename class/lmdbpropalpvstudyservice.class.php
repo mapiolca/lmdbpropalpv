@@ -92,7 +92,13 @@ class LmdbPropalPVStudyService
 		$proposedReferencePower = $inverterResolution['data_complete'] && $inverterPower !== null && $inverterPower > 0.0
 			? min($peakPowerKwp, $inverterPower)
 			: $peakPowerKwp;
-		$suggestedPhaseMode = $proposedReferencePower > 6.0 || $inverterResolution['has_three_phase'] ? 'three' : 'single';
+		$rawInjectionLimit = $propal->array_options['options_lmdbpropalpv_injection_limit_kva'] ?? null;
+		// Preserve unknown and zero, and report invalid imported values as errors.
+		$injectionLimit = $rawInjectionLimit === null || $rawInjectionLimit === ''
+			? null : (is_numeric($rawInjectionLimit) ? (float) $rawInjectionLimit : NAN);
+		$proposedInjectionPower = $injectionLimit !== null && is_finite($injectionLimit) && $injectionLimit >= 0.0
+			? min($proposedReferencePower, $injectionLimit) : $proposedReferencePower;
+		$suggestedPhaseMode = $proposedInjectionPower > 6.0 || $inverterResolution['has_three_phase'] ? 'three' : 'single';
 		$phaseMode = $this->optionString($propal, 'lmdbpropalpv_connection_phase_mode', $suggestedPhaseMode);
 		if (!in_array($phaseMode, array('single', 'three'), true)) {
 			$phaseMode = $suggestedPhaseMode;
@@ -107,6 +113,7 @@ class LmdbPropalPVStudyService
 			'retail_mode' => $this->optionString($propal, 'lmdbpropalpv_retail_tariff_mode', lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_RETAIL_TARIFF_MODE', 'base', $ownerEntity)),
 			'subscription_kva' => $this->optionFloat($propal, 'lmdbpropalpv_retail_subscription_kva', (float) lmdbpropalpvGetEntityStringConstant($this->db, 'LMDBPROPALPV_DEFAULT_RETAIL_SUBSCRIPTION_KVA', '6', $ownerEntity)),
 			'connection_phase_mode' => $phaseMode,
+			'injection_limit_kva' => $injectionLimit,
 			'retail_price_per_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_retail_price_per_kwh', 0.0),
 			'feed_in_price_per_kwh' => $this->optionFloat($propal, 'lmdbpropalpv_feed_in_price_per_kwh', 0.0),
 			'premium_per_kwp' => $this->optionFloat($propal, 'lmdbpropalpv_premium_per_kwp', 0.0),
@@ -222,7 +229,8 @@ class LmdbPropalPVStudyService
 			$inverterPower,
 			(float) $values['subscription_kva'],
 			$phaseMode,
-			(bool) $inverterResolution['data_complete']
+			(bool) $inverterResolution['data_complete'],
+			$injectionLimit
 		));
 
 		return array(

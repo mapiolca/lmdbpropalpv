@@ -4,7 +4,7 @@
 
 Le module externe `lmdbpropalpv` complète les propositions commerciales Dolibarr avec une étude financière photovoltaïque comparative sans/avec batterie sur une durée administrable et deux modèles PDF commerciaux modernisés. Il ne remplace ni le module Propositions commerciales ni PowerPlantPV : il exploite le helper public de puissance-crête et lit en repli contrôlé la table technique normalisée des modules, sans modifier la dépendance.
 
-Version : `1.1.0`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
+Version : `1.1.1`. Identifiant : `450010`. Éditeur : Pierre Ardoin / Les Métiers du Bâtiment.
 
 ## 2. Socle et dépendances
 
@@ -39,6 +39,7 @@ Les hypothèses saisies sont :
 - profil Base, Heures pleines ou Manuel ;
 - puissance souscrite, avec les puissances usuelles du Tarif Bleu et toutes les puissances entières du Tarif Jaune de 37 à 250 kVA ;
 - type de raccordement monophasé ou triphasé ;
+- limite d’injection déclarée facultative en kVA, vide en l’absence de bridage confirmé et nulle pour une installation sans injection ;
 - prix de l’électricité ;
 - tarif de vente du surplus ;
 - prime par kWc.
@@ -47,15 +48,21 @@ Les valeurs initiales sont 68 %, 0,45 % pour chacune des deux dégradations et 3
 
 Le premier enregistrement copie les deux taux dans le devis. Les modifications ultérieures des fiches produits n’ont aucun effet jusqu’à l’action POST explicite « Recharger les caractéristiques panneaux », réservée aux devis brouillons modifiables.
 
+Lorsqu’une limite d’injection invalide empêche l’enregistrement, le formulaire conserve les valeurs soumises. Le devis batterie sélectionné, son montant autorisé, le verrouillage du champ, le total TTC affiché et le bouton d’actualisation utilisent ces mêmes valeurs de formulaire. Un surcoût absent reste distinct de zéro. Aucun extrafield n’est écrit avant correction ; une nouvelle soumission valide enregistre la sélection conservée, puis redirige vers une page de lecture. Les projections restent fondées sur l’étude enregistrée et ne sont pas un aperçu des valeurs non sauvegardées.
+
 Le titre du navigateur est composé de la référence du devis et du libellé traduit de l’onglet, par exemple `PROV1215 - Étude financière PV`. Les aides utilisent exclusivement les tooltips natifs `Form::textwithpicto()` avec un contenu traduit non vide.
 
 ### 3.2 Contrôle indicatif de raccordement
 
 Les lignes de produits PowerPlantPV de catégorie `ONDULE`, avec quantité positive, alimentent la somme `quantité × ac_nominal_power`, convertie de W en kVA. Les produits virtuels Dolibarr sont développés depuis leur composition native : la quantité de chaque onduleur est multipliée par la quantité du kit dans le devis et par les quantités de chaque niveau lorsqu’un kit est imbriqué. Les onduleurs directs et ceux provenant de plusieurs kits sont ensuite cumulés. La puissance installée de référence est `Pmax = min(puissance-crête, somme des puissances AC nominales des onduleurs)`, conformément à la [demande de raccordement Enedis](https://www.enedis.fr/media/1946/download). Les produits et leurs caractéristiques suivent les entités accessibles selon `getEntity('product')`.
 
-Si une table, une colonne, une composition de kit ou une puissance nominale manque, la puissance-crête devient la référence prudente et le statut est « Vérification incomplète ». Lorsqu’un onduleur direct ou inclus dans un kit n’a pas de puissance, sa référence est indiquée à l’utilisateur. Le défaut reste non bloquant. Le type proposé est triphasé si Pmax dépasse 6 kVA ou si un onduleur est triphasé, monophasé sinon. Il est enregistré dans `lmdbpropalpv_connection_phase_mode` au premier enregistrement puis reste modifiable uniquement sur un devis brouillon.
+Si une table, une colonne, une composition de kit ou une puissance nominale manque, la puissance-crête devient la référence prudente et le statut est « Vérification incomplète ». Lorsqu’un onduleur direct ou inclus dans un kit n’a pas de puissance, sa référence est indiquée à l’utilisateur. Le défaut reste non bloquant.
 
-Le contrôle compare Pmax à la puissance souscrite et propose le plus petit palier Bleu ou Jaune disponible. Au-delà de 250 kVA, il demande une étude spécifique. La règle stricte est explicitement formulée par Enedis pour [l’autoconsommation sans injection](https://www.enedis.fr/media/1955/download) ; pour la vente du surplus, une puissance souscrite inférieure déclenche donc seulement une alerte « augmentation à vérifier » auprès du fournisseur ou d’Enedis, sans déclarer automatiquement l’installation non conforme. En monophasé, Pmax supérieure à 6 kVA est signalée. En triphasé jusqu’à 36 kVA, l’interface rappelle les limites de 12 kVA par phase et de 6 kVA de déséquilibre ; au-delà de 36 kVA, elle oriente vers une étude de raccordement dédiée.
+Le contrôle distingue Pmax installée et puissance injectée. Sans limite déclarée, la puissance d’injection contrôlée est Pmax ; avec une limite valide, elle est le minimum entre Pmax et cette limite. Une valeur vide ne suppose aucun bridage ; zéro indique sans injection. Une valeur négative, non numérique ou non finie est refusée. Le type proposé est triphasé si la puissance injectée contrôlée dépasse 6 kVA ou si un onduleur est triphasé, monophasé sinon. Il est enregistré dans `lmdbpropalpv_connection_phase_mode` au premier enregistrement puis reste modifiable uniquement sur un devis brouillon.
+
+Les 6 kVA concernent l’injection en monophasé, pas tous les contrats Tarif Bleu. Pmax supérieure à la puissance souscrite en soutirage ne déclenche aucune suggestion automatique d’augmentation d’abonnement. En triphasé jusqu’à 36 kVA injectés, le contrôle rappelle les limites de 12 kVA par phase et de 6 kVA de déséquilibre ; au-delà, il oriente vers une étude BT dédiée. Le contrôle reste indicatif et ne valide ni le dispositif de limitation ni l’accord Enedis. La source et ses limites sont consignées dans `docs/sources_tarifaires.md`.
+
+Le diagnostic reste disponible dans l’onglet interne. Son inclusion dans les deux PDF est commandée par `LMDBPROPALPV_PDF_CONNECTION_CHECK`, OFF par défaut, dans l’entité propriétaire du devis. Le réglage de l’entité de consultation ne le remplace pas. Les fichiers déjà générés ne sont modifiés qu’après régénération. Le calcul financier annuel ne simule pas l’écrêtement ; les hypothèses de production doivent intégrer les pertes étudiées.
 
 ### 3.3 États
 
@@ -105,7 +112,7 @@ Cas de référence : 3 kWc, 3 456 kWh, 68 %, 0,45 % en première année, 0,45 % 
 
 ## 5. Stockage
 
-Les hypothèses sont stockées dans 16 extrafields `propal`, invisibles sur la fiche principale :
+Le descripteur déclare 17 extrafields d’hypothèses `propal`, invisibles sur la fiche principale :
 
 - `lmdbpropalpv_annual_production_kwh` ;
 - `lmdbpropalpv_self_consumption_pct` ;
@@ -119,10 +126,13 @@ Les hypothèses sont stockées dans 16 extrafields `propal`, invisibles sur la f
 - `lmdbpropalpv_retail_tariff_mode` ;
 - `lmdbpropalpv_retail_subscription_kva` ;
 - `lmdbpropalpv_connection_phase_mode` ;
+- `lmdbpropalpv_injection_limit_kva` ;
 - `lmdbpropalpv_retail_price_per_kwh` ;
 - `lmdbpropalpv_feed_in_price_per_kwh` ;
 - `lmdbpropalpv_premium_per_kwp` ;
 - `lmdbpropalpv_tariff_set_id`.
+
+Un dix-huitième extrafield, `lmdbpropalpv_complex_site`, est un booléen de qualification du devis distinct des hypothèses financières ; il est affiché par le hook dédié lorsque le réglage de cette fonctionnalité est actif.
 
 Les barèmes utilisent deux tables normalisées. Le parent porte l’entité, la période, la devise, la source, l’empreinte, le statut et l’audit. Les règles portent la métrique, l’option, la puissance souscrite, les bornes de kWc, la valeur et l’unité. Une règle hérite de l’entité par la jointure obligatoire au parent.
 
@@ -151,7 +161,7 @@ Les modèles natifs `propal` sont :
 - `lmdbpropalpv_withpictures` — PV Signature illustré ;
 - `lmdbpropalpv_withoutpictures` — PV Signature épuré.
 
-Les deux classes publiques sont minces et partagent un renderer. L’administrateur choisit, pour chaque entité, le modèle PDF actif de proposition commerciale qui produit le corps commercial afin de conserver ses lignes, TVA, remises, multicurrency, notes, conditions, hooks, photos produits et options natives d’intégration des CGV et fiches produits. Les deux modèles PV Signature et les variantes ODT sont exclus de ce choix pour éviter la récursion et garantir une composition PDF. Cyan reste uniquement le repli sûr lorsqu’un modèle configuré devient indisponible. Le modèle commercial achève sa génération avant la composition : toutes ses pages, y compris les CGV et fiches produits activées, sont alors comptées. Pendant la production du corps commercial et du supplément PV, le compteur natif de chaque document source est déplacé hors page sans modifier le reste du pied légal. Le renderer assemble ensuite la couverture, le corps complet et les pages PV, puis injecte le numéro réel et le nombre total réel dans une pagination globale unique. Il ajoute un encadré jaune de diagnostic de raccordement et, si l’étude est complète, des pages financières avec légende sans/avec batterie, deux courbes superposées, deux temps de retour et un tableau annuel paginé jusqu’à 50 ans avec en-têtes répétés. La courbe comporte des graduations d’années et de trésorerie, ainsi qu’un repère vertical coloré pour chaque temps de retour atteint. Les libellés sont décalés lorsque les deux retours sont proches. Les mêmes repères sont affichés dans l’onglet du devis.
+Les deux classes publiques sont minces et partagent un renderer. L’administrateur choisit, pour chaque entité, le modèle PDF actif de proposition commerciale qui produit le corps commercial afin de conserver ses lignes, TVA, remises, multicurrency, notes, conditions, hooks, photos produits et options natives d’intégration des CGV et fiches produits. Les deux modèles PV Signature et les variantes ODT sont exclus de ce choix pour éviter la récursion et garantir une composition PDF. Cyan reste uniquement le repli sûr lorsqu’un modèle configuré devient indisponible. Le modèle commercial achève sa génération avant la composition : toutes ses pages, y compris les CGV et fiches produits activées, sont alors comptées. Pendant la production du corps commercial et du supplément PV, le compteur natif de chaque document source est déplacé hors page sans modifier le reste du pied légal. Le renderer assemble ensuite la couverture, le corps complet et les pages PV, puis injecte le numéro réel et le nombre total réel dans une pagination globale unique. Si le réglage PDF de l’entité propriétaire est ON, il ajoute un encadré jaune de diagnostic de raccordement ; OFF ou constante absente, cet encadré et ses alertes sont omis. Si l’étude est complète, il ajoute des pages financières avec légende sans/avec batterie, deux courbes superposées, deux temps de retour et un tableau annuel paginé jusqu’à 50 ans avec en-têtes répétés. La courbe comporte des graduations d’années et de trésorerie, ainsi qu’un repère vertical coloré pour chaque temps de retour atteint. Les libellés sont décalés lorsque les deux retours sont proches. Les mêmes repères sont affichés dans l’onglet du devis.
 
 Les identifiants techniques restent `lmdbpropalpv_withpictures` et `lmdbpropalpv_withoutpictures`, tandis que `document_model.libelle` porte les noms traduits « PV Signature illustré » et « PV Signature épuré ». Le champ `document_model.description` reste vide pour que Dolibarr traite ces entrées comme des modèles PHP et non comme des répertoires de modèles fichiers.
 
@@ -188,7 +198,7 @@ Droits :
 - modifier l’étude ;
 - configurer le module et les barèmes.
 
-Les identifiants sont calculés à partir de `450010 * 100 + r`. Un administrateur Dolibarr ou Multicompany bénéficie d’une élévation fonctionnelle centralisée. Les contrôles d’entité, d’objet et de CSRF restent obligatoires.
+Les identifiants sont calculés à partir de `450010 * 100 + r`. Dans l’onglet financier, les permissions sont déterminées par les appels directs à `hasRight()` pour le module et la proposition, y compris pour un administrateur Dolibarr ou Multicompany ; aucun rôle administrateur ne court-circuite ces contrôles. Les contrôles d’entité, de tiers externe, d’objet et de CSRF restent séparés. Les réglages du module exigent le rôle administrateur natif. Les autres points d’entrée ne sont pas modifiés par ce correctif.
 
 ## 10. Exclusions V1
 
